@@ -1,0 +1,8 @@
+TOPIC
+    about_Carbon.FileSystem
+
+SHORT DESCRIPTION
+    Carbon.FileSystem is a PowerShell module for...
+
+LONG DESCRIPTION
+    The Carbon.FileSystem PowerShell module...
