@@ -18,7 +18,7 @@
     RootModule = 'Carbon.FileSystem.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = ''
@@ -76,6 +76,7 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
+        'Get-FileHardLink'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.
