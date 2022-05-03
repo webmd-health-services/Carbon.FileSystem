@@ -8,62 +8,64 @@ BeforeAll {
     $script:testRoot = $null
     $script:testNum = 0
 
-    function CreateHardlink
+    function GivenHardlink
     {
         param(
-            [Parameter(Mandatory)]
-            [String] $RepoRoot,
+            [Parameter(Mandatory, Position=0)]
+            [String[]] $LinkPath,
 
             [Parameter(Mandatory)]
-            [String] $Driver
+            [String] $ThatTargets
         )
 
-        if( -not (Test-Path -Path $RepoRoot -PathType Container) )
+        if( -not (Test-Path -Path $testRoot -PathType Container) )
         {
-            Write-Error -Message ('Repository root "{0}" does not exist.' -f $RepoRoot) -ErrorAction $ErrorActionPreference
+            Write-Error -Message ('Repository root "{0}" does not exist.' -f $testRoot) -ErrorAction $ErrorActionPreference
             return
         }
 
-        Push-Location -Path $RepoRoot
+        Push-Location -Path $testRoot
 
         try
         {
-            $linkPath = Join-Path -Path '.' -ChildPath '.kitchen.local.yml'
-            $targetPath = Join-Path -Path '.' -ChildPath ('.kitchen.{0}.yml' -f $Driver)
+            $targetPath = Join-Path -Path '.' -ChildPath ('.kitchen.{0}.yml' -f $ThatTargets)
             if( -not (Test-Path -Path $targetPath -PathType Leaf) )
             {
-                Write-Error -Message ('Target driver file "{0}" does not exist,' -f $targetPath) -ErrorAction $ErrorActionPreference
+                Write-Error -Message ('Target file "{0}" does not exist,' -f $targetPath) -ErrorAction $ErrorActionPreference
                 return
             }
 
             $targetPath = Resolve-Path -Path $targetPath | Select-Object -ExpandProperty 'ProviderPath'
 
-            if( (Test-Path -Path $linkPath -PathType Leaf) )
+            foreach( $linkPath in $LinkPath )
             {
-                Write-Verbose -Message ('Removing "{0}": this file exists.' -f $linkPath)
-                Remove-Item -Path $linkPath
-            }
-
-            if( Test-Path -Path $linkPath -PathType Leaf )
-            {
-                $link = Get-Item -Path $linkPath
-                if( -not $link.Target )
+                if( (Test-Path -Path $linkPath -PathType Leaf) )
                 {
-                    Write-Error -Message ('File "{0}" exists but is not a hardlink to "{1}". Remove this file, or use the -Force switch to delete it and re-create.' -f $linkPath, $targetPath) -ErrorAction $ErrorActionPreference
-                    return
-                }
-
-                if( $link.Target -notcontains $targetPath )
-                {
-                    Write-Verbose ('Removing "{0}": exists but links to "{1}".' -f $linkPath,($link.Target -join '", "'))
+                    Write-Verbose -Message ('Removing "{0}": this file exists.' -f $linkPath)
                     Remove-Item -Path $linkPath
                 }
-            }
 
-            if( -not (Test-Path -Path $linkPath -PathType Leaf) )
-            {
-                Write-Verbose ('Creating hardlink "{0}" -> "{1}".' -f $linkPath,$targetPath)
-                New-Item -ItemType HardLink -Path $linkPath -Value $targetPath
+                if( Test-Path -Path $linkPath -PathType Leaf )
+                {
+                    $link = Get-Item -Path $linkPath
+                    if( -not $link.Target )
+                    {
+                        Write-Error -Message ('File "{0}" exists but is not a hardlink to "{1}". Remove this file, or use the -Force switch to delete it and re-create.' -f $linkPath, $targetPath) -ErrorAction $ErrorActionPreference
+                        return
+                    }
+
+                    if( $link.Target -notcontains $targetPath )
+                    {
+                        Write-Verbose ('Removing "{0}": exists but links to "{1}".' -f $linkPath,($link.Target -join '", "'))
+                        Remove-Item -Path $linkPath
+                    }
+                }
+
+                if( -not (Test-Path -Path $linkPath -PathType Leaf) )
+                {
+                    Write-Verbose ('Creating hardlink "{0}" -> "{1}".' -f $linkPath,$targetPath)
+                    New-Item -ItemType HardLink -Path $linkPath -Value $targetPath
+                }
             }
         }
         finally
@@ -109,18 +111,12 @@ BeforeAll {
 
             [switch]$Exists,
 
-            [String]$In,
-
             [Object]$HasLinkType,
 
             [Object]$Targets
         )
 
-        $fullPath = $Path
-        if( $In )
-        {
-            $fullPath = Join-Path -Path $In -ChildPath $Path
-        }
+        $fullPath = Join-Path -Path $testRoot -ChildPath $Path
 
         if( $Exists )
         {
@@ -134,9 +130,9 @@ BeforeAll {
 
         if( $PSBoundParameters.ContainsKey('Targets') )
         {
-            if( $In -and $Targets -and -not [IO.Path]::IsPathRooted($Targets) )
+            if( $Targets -and -not [IO.Path]::IsPathRooted($Targets) )
             {
-                $Targets = Join-Path -Path $In -ChildPath $Targets -Resolve
+                $Targets = Join-Path -Path $testRoot -ChildPath $Targets -Resolve
             }
             Get-FileHardLink -Path $fullPath | Should -Not:$Not -Contain $Targets
         }
@@ -153,16 +149,22 @@ Describe 'Get-FileHardLink' {
     }
 
     It 'should fail when there is no driver file' {
-        CreateHardlink -RepoRoot $testRoot -Driver 'testDriver' -ErrorAction SilentlyContinue
+        $linkPath = Join-Path -Path '.' -ChildPath '.kitchen.local.yml'
+        GivenHardlink -LinkPath $linkPath -ThatTargets 'testDriver' -ErrorAction SilentlyContinue
         ThenFailed -WithErrorMatching '\.kitchen\.testDriver\.yml" does not exist'
-        ThenFile '.kitchen.local.yml' -Not -Exists -In $testRoot
+        ThenFile '.kitchen.local.yml' -Not -Exists
     }
 
     It 'should retrieve targets from link when there is a driver file' {
+        $linkPath = @()
+        $linkPath += Join-Path -Path '.' -ChildPath '.kitchen.local.yml'
+        $linkPath += Join-Path -Path '.' -ChildPath '.kitchen.azure.yml'
         GivenFile '.kitchen.somedriver.yml' -In $testRoot
-        CreateHardlink -RepoRoot $testRoot -Driver 'somedriver'
+        GivenHardlink -LinkPath $linkPath -ThatTargets 'somedriver'
         ThenFile '.kitchen.local.yml' -Exists `
-                                      -In $testRoot `
+                                      -HasLinkType 'HardLink' `
+                                      -Targets '.kitchen.somedriver.yml'
+        ThenFile '.kitchen.azure.yml' -Exists `
                                       -HasLinkType 'HardLink' `
                                       -Targets '.kitchen.somedriver.yml'
     }

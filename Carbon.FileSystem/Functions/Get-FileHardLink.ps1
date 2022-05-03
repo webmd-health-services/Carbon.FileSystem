@@ -1,10 +1,30 @@
+<#
+.SYNOPSIS
+Retrieves hard link targets from a file.
 
+.DESCRIPTION
+Get-FileHardLink retrieves hard link targets from a file given a file path. This fixes compatibility issues between
+Windows PowerShell and PowerShell Core when retrieving targets from a hard link.
+
+.EXAMPLE
+Get-FileHardLink -Path $Path
+
+Demonstrates how to retrieve a hard link given a file path.
+#>
 function Get-FileHardLink
 {
     param(
         [Parameter(Mandatory)]
         [String] $Path
     )
+
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+    if( -not (Resolve-Path -LiteralPath $Path) )
+    {
+        return
+    }
 
     $sbPath = [Text.StringBuilder]::New([Carbon.FileSystem.Kernel32]::MAX_PATH)
     $charCount = [uint]$sbPath.Capacity; # in/out character-count variable for the WinAPI calls.
@@ -20,7 +40,9 @@ function Get-FileHardLink
     $findHandle = [Carbon.FileSystem.Kernel32]::FindFirstFileNameW($Path, 0, [ref]$charCount, $sbPath)
     if( [Carbon.FileSystem.Kernel32]::INVALID_HANDLE_VALUE -eq $findHandle)
     {
-        Write-Warning 'Invalid handle.'
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        $msg = "Failed to find hard links to path ""$($Path | Split-Path -Relative)"": the system error code is ""$($errorCode)""." 
+        Write-Error $msg
         return
     }
   
