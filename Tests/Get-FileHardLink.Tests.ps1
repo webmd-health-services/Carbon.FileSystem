@@ -45,22 +45,6 @@ BeforeAll {
                     Remove-Item -Path $linkPath
                 }
 
-                if( Test-Path -Path $linkPath -PathType Leaf )
-                {
-                    $link = Get-Item -Path $linkPath
-                    if( -not $link.Target )
-                    {
-                        Write-Error -Message ('File "{0}" exists but is not a hardlink to "{1}". Remove this file, or use the -Force switch to delete it and re-create.' -f $linkPath, $targetPath) -ErrorAction $ErrorActionPreference
-                        return
-                    }
-
-                    if( $link.Target -notcontains $targetPath )
-                    {
-                        Write-Verbose ('Removing "{0}": exists but links to "{1}".' -f $linkPath,($link.Target -join '", "'))
-                        Remove-Item -Path $linkPath
-                    }
-                }
-
                 if( -not (Test-Path -Path $linkPath -PathType Leaf) )
                 {
                     Write-Verbose ('Creating hardlink "{0}" -> "{1}".' -f $linkPath,$targetPath)
@@ -125,7 +109,7 @@ BeforeAll {
 
         if( $PSBoundParameters.ContainsKey('HasLinkType') )
         {
-            Get-Item -Path $fullPath | Select-Object -Expand 'LinkType' | Should -Not:$Not -Be $HasLinkType
+            Get-Item -Path $fullPath -Force | Select-Object -Expand 'LinkType' | Should -Not:$Not -Be $HasLinkType
         }
 
         if( $PSBoundParameters.ContainsKey('Targets') )
