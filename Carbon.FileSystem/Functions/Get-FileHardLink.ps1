@@ -6,6 +6,8 @@ Retrieves hard link targets from a file.
 Get-FileHardLink retrieves hard link targets from a file given a file path. This fixes compatibility issues between
 Windows PowerShell and PowerShell Core when retrieving targets from a hard link.
 
+The Path parameter is a full path to the file that you want to retrieve hard link targets from.
+
 .EXAMPLE
 Get-FileHardLink -Path $Path
 
@@ -43,7 +45,7 @@ function Get-FileHardLink
         {
             $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
             $msg = "Failed to find hard links to path ""$($Path | Split-Path -Relative)"": the system error code is ""$($errorCode)""."
-            Write-Error $msg
+            Write-Error $msg -ErrorAction $ErrorActionPreference
             return
         }
   

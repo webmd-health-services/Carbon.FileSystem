@@ -68,12 +68,12 @@ BeforeAll {
     }
 }
 
-Describe 'Cabon.FileSystem.Tests' {
+Describe 'Cabon.FileSystem' {
     BeforeEach {
         Init
     }
 
-    It 'should have one' {
+    It 'should have about help topic' {
         GivenModuleImported
         ThenHelpTopic 'about_Carbon.FileSystem' -Exists
     }

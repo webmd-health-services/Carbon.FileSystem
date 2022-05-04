@@ -24,37 +24,26 @@ BeforeAll {
             return
         }
 
-        Push-Location -Path $testRoot
-
-        try
+        $targetPath = Join-Path -Path $testRoot -ChildPath $ThatTargets
+        if( -not (Test-Path -Path $targetPath -PathType Leaf) )
         {
-            $targetPath = Join-Path -Path '.' -ChildPath ('.kitchen.{0}.yml' -f $ThatTargets)
-            if( -not (Test-Path -Path $targetPath -PathType Leaf) )
-            {
-                Write-Error -Message ('Target file "{0}" does not exist,' -f $targetPath) -ErrorAction $ErrorActionPreference
-                return
-            }
-
-            $targetPath = Resolve-Path -Path $targetPath | Select-Object -ExpandProperty 'ProviderPath'
-
-            foreach( $linkPath in $LinkPath )
-            {
-                if( (Test-Path -Path $linkPath -PathType Leaf) )
-                {
-                    Write-Verbose -Message ('Removing "{0}": this file exists.' -f $linkPath)
-                    Remove-Item -Path $linkPath
-                }
-
-                if( -not (Test-Path -Path $linkPath -PathType Leaf) )
-                {
-                    Write-Verbose ('Creating hardlink "{0}" -> "{1}".' -f $linkPath,$targetPath)
-                    New-Item -ItemType HardLink -Path $linkPath -Value $targetPath
-                }
-            }
+            Write-Error -Message ('Target file "{0}" does not exist,' -f $targetPath) -ErrorAction $ErrorActionPreference
+            return
         }
-        finally
+
+        foreach( $linkPathItem in $LinkPath )
         {
-            Pop-Location
+            if( (Test-Path -Path $linkPathItem -PathType Leaf) )
+            {
+                Write-Verbose -Message ('Removing "{0}": this file exists.' -f $linkPathItem)
+                Remove-Item -Path $linkPathItem
+            }
+
+            if( -not (Test-Path -Path $linkPathItem -PathType Leaf) )
+            {
+                Write-Verbose ('Creating hardlink "{0}" -> "{1}".' -f $linkPathItem,$targetPath)
+                New-Item -ItemType HardLink -Path (Join-Path -Path $testRoot -ChildPath $linkPathItem) -Value $targetPath
+            }
         }
     }
 
@@ -69,7 +58,7 @@ BeforeAll {
 
         if( $In )
         {
-            $Path = Join-Path -Path $In -ChildPath $Path
+            $Path = Join-Path -Path $testRoot -ChildPath $Path
         }
 
         New-Item -Path $Path -ItemType 'File'
@@ -89,15 +78,15 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [String]$Path,
+            [String] $Path,
 
-            [switch]$Not,
+            [switch] $Not,
 
-            [switch]$Exists,
+            [switch] $Exists,
 
-            [Object]$HasLinkType,
+            [Object] $HasLinkType,
 
-            [Object]$Targets
+            [Object] $Targets
         )
 
         $fullPath = Join-Path -Path $testRoot -ChildPath $Path
@@ -132,24 +121,24 @@ Describe 'Get-FileHardLink' {
         $Global:Error.Clear()
     }
 
-    It 'should fail when there is no driver file' {
-        $linkPath = Join-Path -Path '.' -ChildPath '.kitchen.local.yml'
-        GivenHardlink -LinkPath $linkPath -ThatTargets 'testDriver' -ErrorAction SilentlyContinue
-        ThenFailed -WithErrorMatching '\.kitchen\.testDriver\.yml" does not exist'
-        ThenFile '.kitchen.local.yml' -Not -Exists
+    It "should fail when target doesn't exist" {
+        $linkPath = 'link.txt'
+        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt' -ErrorAction SilentlyContinue
+        ThenFailed -WithErrorMatching 'testTarget.txt\" does not exist'
+        ThenFile 'link.txt' -Not -Exists
     }
 
-    It 'should retrieve targets from link when there is a driver file' {
+    It 'should retrieve hard link targets' {
         $linkPath = @()
-        $linkPath += Join-Path -Path '.' -ChildPath '.kitchen.local.yml'
-        $linkPath += Join-Path -Path '.' -ChildPath '.kitchen.azure.yml'
-        GivenFile '.kitchen.somedriver.yml' -In $testRoot
-        GivenHardlink -LinkPath $linkPath -ThatTargets 'somedriver'
-        ThenFile '.kitchen.local.yml' -Exists `
+        $linkPath += 'link1.txt'
+        $linkPath += 'link2.txt'
+        GivenFile 'testTarget.txt'
+        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
+        ThenFile 'link1.txt' -Exists `
                                       -HasLinkType 'HardLink' `
-                                      -Targets '.kitchen.somedriver.yml'
-        ThenFile '.kitchen.azure.yml' -Exists `
+                                      -Targets 'testTarget.txt'
+        ThenFile 'link2.txt' -Exists `
                                       -HasLinkType 'HardLink' `
-                                      -Targets '.kitchen.somedriver.yml'
+                                      -Targets 'testTarget.txt'
     }
 }
