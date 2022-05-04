@@ -58,6 +58,10 @@ BeforeAll {
 
         if( $In )
         {
+            $Path = Join-Path -Path $In -ChildPath $Path
+        }
+        else 
+        {
             $Path = Join-Path -Path $testRoot -ChildPath $Path
         }
 
