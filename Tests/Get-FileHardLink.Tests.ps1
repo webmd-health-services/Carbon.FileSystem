@@ -18,17 +18,10 @@ BeforeAll {
             [String] $ThatTargets
         )
 
-        if( -not (Test-Path -Path $testRoot -PathType Container) )
-        {
-            Write-Error -Message ('Repository root "{0}" does not exist.' -f $testRoot) -ErrorAction $ErrorActionPreference
-            return
-        }
-
         $targetPath = Join-Path -Path $testRoot -ChildPath $ThatTargets
         if( -not (Test-Path -Path $targetPath -PathType Leaf) )
         {
-            Write-Error -Message ('Target file "{0}" does not exist,' -f $targetPath) -ErrorAction $ErrorActionPreference
-            return
+            New-Item -Path $targetPath -ItemType 'File'
         }
 
         foreach( $linkPathItem in $LinkPath )
@@ -125,24 +118,26 @@ Describe 'Get-FileHardLink' {
         $Global:Error.Clear()
     }
 
-    It "should fail when target doesn't exist" {
+    It "should create target file when it doesn't exist" {
         $linkPath = 'link.txt'
-        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt' -ErrorAction SilentlyContinue
-        ThenFailed -WithErrorMatching 'testTarget.txt\" does not exist'
-        ThenFile 'link.txt' -Not -Exists
+        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
+        ThenFile 'testTarget.txt' -Exists
+        ThenFile 'link.txt' -Exists `
+                                    -HasLinkType 'HardLink' `
+                                    -Targets 'testTarget.txt'
     }
 
-    It 'should retrieve hard link targets' {
+    It 'should retrieve hard link targets when there are multiple link paths' {
         $linkPath = @()
         $linkPath += 'link1.txt'
         $linkPath += 'link2.txt'
         GivenFile 'testTarget.txt'
         GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
         ThenFile 'link1.txt' -Exists `
-                                      -HasLinkType 'HardLink' `
-                                      -Targets 'testTarget.txt'
+                                    -HasLinkType 'HardLink' `
+                                    -Targets 'testTarget.txt'
         ThenFile 'link2.txt' -Exists `
-                                      -HasLinkType 'HardLink' `
-                                      -Targets 'testTarget.txt'
+                                    -HasLinkType 'HardLink' `
+                                    -Targets 'testTarget.txt'
     }
 }

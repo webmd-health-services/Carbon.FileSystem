@@ -6,8 +6,6 @@ Retrieves hard link targets from a file.
 Get-FileHardLink retrieves hard link targets from a file given a file path. This fixes compatibility issues between
 Windows PowerShell and PowerShell Core when retrieving targets from a hard link.
 
-The Path parameter is a full path to the file that you want to retrieve hard link targets from.
-
 .EXAMPLE
 Get-FileHardLink -Path $Path
 
@@ -16,6 +14,7 @@ Demonstrates how to retrieve a hard link given a file path.
 function Get-FileHardLink
 {
     param(
+        # The path whose hard links to get/return. Must exist.
         [Parameter(Mandatory)]
         [String] $Path
     )
@@ -28,7 +27,8 @@ function Get-FileHardLink
         return
     }
 
-    try {
+    try 
+    {
         $sbPath = [Text.StringBuilder]::New([Carbon.FileSystem.Kernel32]::MAX_PATH)
         $charCount = [uint32]$sbPath.Capacity; # in/out character-count variable for the WinAPI calls.
         # Get the volume (drive) part of the target file's full path (e.g., @"C:\")
@@ -57,7 +57,8 @@ function Get-FileHardLink
         while( [Carbon.FileSystem.Kernel32]::FindNextFileNameW($findHandle, [ref]$charCount, $sbPath) )
         [void][Carbon.FileSystem.Kernel32]::FindClose($findHandle);
     }
-    catch {
-        Write-Error -Message $_
+    catch 
+    {
+        Write-Error -Message $_ -ErrorAction $ErrorActionPreference
     }
 }
