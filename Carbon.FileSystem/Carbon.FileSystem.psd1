@@ -18,7 +18,7 @@
     RootModule = 'Carbon.FileSystem.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = ''
@@ -36,7 +36,9 @@
     Copyright = '(c) WebMD Health Services.'
 
     # Description of the functionality provided by this module
-    Description = ''
+    Description = 'The Carbon.FileSystem module currently only has one function, Get-FileHardLink, which is used to
+    retrieve hard link targets. This fixes a breaking change from Windows PowerShell where the Target property is
+    not populated in PowerShell Core when using Get-Item to retrieve a previously linked file.'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.1'
@@ -76,6 +78,7 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
+        'Get-FileHardLink'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

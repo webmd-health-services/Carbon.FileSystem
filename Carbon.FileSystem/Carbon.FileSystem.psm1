@@ -20,6 +20,37 @@ Set-StrictMode -Version 'Latest'
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
 
+Add-Type @'
+using System;
+using System.Text;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
+namespace Carbon.FileSystem
+{
+  public static class Kernel32
+  {
+
+    #region WinAPI P/Invoke declarations
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern IntPtr FindFirstFileNameW(string lpFileName, uint dwFlags, ref uint StringLength, StringBuilder LinkName);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern bool FindNextFileNameW(IntPtr hFindStream, ref uint StringLength, StringBuilder LinkName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool FindClose(IntPtr hFindFile);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern bool GetVolumePathName(string lpszFileName, [Out] StringBuilder lpszVolumePathName, uint cchBufferLength);
+
+    public static readonly IntPtr INVALID_HANDLE_VALUE = (IntPtr)(-1); // 0xffffffff;
+    public const int MAX_PATH = 65535; // Max. NTFS path length.
+    #endregion
+   }
+}
+'@
+
 # Store each of your module's functions in its own file in the Functions 
 # directory. On the build server, your module's functions will be appended to 
 # this file, so only dot-source files that exist on the file system. This allows
