@@ -123,8 +123,8 @@ Describe 'Get-FileHardLink' {
         GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
         ThenFile 'testTarget.txt' -Exists
         ThenFile 'link.txt' -Exists `
-                                    -HasLinkType 'HardLink' `
-                                    -Targets 'testTarget.txt'
+                            -HasLinkType 'HardLink' `
+                            -Targets 'testTarget.txt'
     }
 
     It 'should retrieve hard link targets when there are multiple link paths' {
@@ -134,10 +134,10 @@ Describe 'Get-FileHardLink' {
         GivenFile 'testTarget.txt'
         GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
         ThenFile 'link1.txt' -Exists `
-                                    -HasLinkType 'HardLink' `
-                                    -Targets 'testTarget.txt'
+                             -HasLinkType 'HardLink' `
+                             -Targets 'testTarget.txt'
         ThenFile 'link2.txt' -Exists `
-                                    -HasLinkType 'HardLink' `
-                                    -Targets 'testTarget.txt'
+                             -HasLinkType 'HardLink' `
+                             -Targets 'testTarget.txt'
     }
 }
