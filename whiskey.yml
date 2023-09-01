@@ -12,6 +12,15 @@ Build:
       Path: appveyor
       Argument: [ UpdateBuild, -Version, $(WHISKEY_SEMVER2) ]
 
+- PowerShell:
+    ExceptDuring: Clean
+    Path: init.ps1
+
+- PowerShell:
+    ExceptDuring: Clean
+    WorkingDirectory: Carbon.FileSystem
+    ScriptBlock: prism install | Format-Table
+
 # Dot-sourcing files is expensive. Move all functions into .psm1 file to improve import speed. Do this before testing
 # to ensure the module still works.
 - MergeFile:
@@ -23,10 +32,6 @@ Build:
     DestinationPath: Carbon.FileSystem\Carbon.FileSystem.psm1
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
-
-- PowerShell:
-    ExceptDuring: Clean
-    Path: init.ps1
 
 - PowerShell:
     OnlyDuring: Clean
@@ -46,7 +51,7 @@ Build:
 
 - Zip:
     ArchivePath: .output\Carbon.FileSystem-$(WHISKEY_SEMVER2).zip
-    Path: 
+    Path:
     - Carbon.FileSystem
     Exclude:
     - "*.pdb"
@@ -72,8 +77,8 @@ Build:
     ]
 
 - Pester:
-    Configuration: 
-        Run: 
+    Configuration:
+        Run:
             Path: Tests\*.Tests.ps1
             Exit: true
             Throw: true

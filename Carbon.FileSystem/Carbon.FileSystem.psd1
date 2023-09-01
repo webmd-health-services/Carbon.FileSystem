@@ -18,7 +18,7 @@
     RootModule = 'Carbon.FileSystem.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.1'
+    ModuleVersion = '1.1.0'
 
     # ID used to uniquely identify this module
     GUID = '84e0a546-5791-4c7e-a05b-29d592029398'
@@ -78,7 +78,11 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
-        'Get-FileHardLink'
+        'Get-CNtfsPermission',
+        'Get-FileHardLink',
+        'Grant-CNtfsPermission',
+        'Revoke-CNtfsPermission',
+        'Test-CNtfsPermission'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

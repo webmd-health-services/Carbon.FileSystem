@@ -1,0 +1,14 @@
+{
+  "PSModules": [
+    {
+      "name": "Carbon",
+      "version": "2.15.1",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    },
+    {
+      "name": "Carbon.Accounts",
+      "version": "1.0.0-rc3",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    }
+  ]
+}
