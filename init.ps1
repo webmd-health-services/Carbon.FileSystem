@@ -19,3 +19,5 @@ param(
 Set-StrictMode -Version 'Latest'
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
+prism install | Format-Table
+

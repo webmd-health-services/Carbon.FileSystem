@@ -1,14 +1,10 @@
 
-PublishOn:
-- main
-- prerelease
-
 Build:
 - Version:
     Path: Carbon.FileSystem\Carbon.FileSystem.psd1
     Prerelease:
-    - "*/*": alpha$(WHISKEY_BUILD_NUMBER)
-    - develop: rc$(WHISKEY_BUILD_NUMBER)
+    - main: ""
+    - "*": rc$(WHISKEY_BUILD_NUMBER)
 
 # Update the AppVeyor build/version number.
 - Exec:
@@ -84,4 +80,6 @@ Build:
         TestResult:
             Enabled: true
             OutputPath: .output\pester.xml
-            TestSuiteName: Template-PSModule-OSS-Apache2.0
+            TestSuiteName: Carbon.FileSystem
+        Output:
+            Verbosity: Detailed
