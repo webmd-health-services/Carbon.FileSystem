@@ -1,5 +1,5 @@
 {
-	"PSModules": [
+  "PSModules": [
     {
       "Name": "Carbon",
       "Version": "*"
@@ -8,5 +8,5 @@
       "Name": "Carbon.Accounts",
       "Version": "1.*-*"
     }
-	]
+  ]
 }
