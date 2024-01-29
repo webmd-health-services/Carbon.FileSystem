@@ -18,7 +18,7 @@
     RootModule = 'Carbon.FileSystem.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.1'
+    ModuleVersion = '1.1.0'
 
     # ID used to uniquely identify this module
     GUID = '84e0a546-5791-4c7e-a05b-29d592029398'
@@ -36,7 +36,7 @@
     Copyright = '(c) WebMD Health Services.'
 
     # Description of the functionality provided by this module
-    Description = 'The Carbon.FileSystem module currently only has one function, Get-FileHardLink, which is used to
+    Description = 'The Carbon.FileSystem module currently only has one function, Get-CNtfsHardLink, which is used to
     retrieve hard link targets. This fixes a breaking change from Windows PowerShell where the Target property is
     not populated in PowerShell Core when using Get-Item to retrieve a previously linked file.'
 
@@ -78,7 +78,12 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
-        'Get-FileHardLink'
+        'Get-CNtfsPermission',
+        'Get-CNtfsHardLink',
+        'Get-FileHardLink',
+        'Grant-CNtfsPermission',
+        'Revoke-CNtfsPermission',
+        'Test-CNtfsPermission'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

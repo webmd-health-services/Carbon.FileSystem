@@ -7,7 +7,7 @@ skip_branch_with_pr: true
 build:
   verbosity: minimal
 
-test: off
+test: false
 
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
@@ -43,11 +43,17 @@ for:
     only:
     - job_group: ps
   build_script:
-  - ps: .\build.ps1
+  - ps: |
+      $ProgressPreference = 'SilentlyContinue'
+      iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
+      .\build.ps1
 
 # Build in PowerShell
 - matrix:
     only:
     - job_group: pwsh
   build_script:
-  - pwsh: ./build.ps1
+  - pwsh: |
+      $ProgressPreference = 'SilentlyContinue'
+      iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
+      ./build.ps1

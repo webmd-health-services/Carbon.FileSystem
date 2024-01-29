@@ -1,18 +1,19 @@
-<#
-.SYNOPSIS
-Retrieves hard link targets from a file.
-
-.DESCRIPTION
-Get-FileHardLink retrieves hard link targets from a file given a file path. This fixes compatibility issues between
-Windows PowerShell and PowerShell Core when retrieving targets from a hard link.
-
-.EXAMPLE
-Get-FileHardLink -Path $Path
-
-Demonstrates how to retrieve a hard link given a file path.
-#>
-function Get-FileHardLink
+function Get-CNtfsHardLink
 {
+    <#
+    .SYNOPSIS
+    Retrieves hard link targets from a file.
+
+    .DESCRIPTION
+    Get-CNtfsHardLink retrieves hard link targets from a file given a file path. This fixes compatibility issues between
+    Windows PowerShell and PowerShell Core when retrieving targets from a hard link.
+
+    .EXAMPLE
+    Get-CNtfsHardLink -Path $Path
+
+    Demonstrates how to retrieve a hard link given a file path.
+    #>
+    [CmdletBinding()]
     param(
         # The path whose hard links to get/return. Must exist.
         [Parameter(Mandatory)]
@@ -27,7 +28,7 @@ function Get-FileHardLink
         return
     }
 
-    try 
+    try
     {
         $sbPath = [Text.StringBuilder]::New([Carbon.FileSystem.Kernel32]::MAX_PATH)
         $charCount = [uint32]$sbPath.Capacity; # in/out character-count variable for the WinAPI calls.
@@ -48,7 +49,7 @@ function Get-FileHardLink
             Write-Error $msg -ErrorAction $ErrorActionPreference
             return
         }
-  
+
         do
         {
             Join-Path -Path $volume -ChildPath $sbPath.ToString() | Write-Output # Add the full path to the result list.
@@ -57,8 +58,36 @@ function Get-FileHardLink
         while( [Carbon.FileSystem.Kernel32]::FindNextFileNameW($findHandle, [ref]$charCount, $sbPath) )
         [void][Carbon.FileSystem.Kernel32]::FindClose($findHandle);
     }
-    catch 
+    catch
     {
         Write-Error -Message $_ -ErrorAction $ErrorActionPreference
     }
+}
+
+function Get-FileHardLink
+{
+    <#
+    .SYNOPSIS
+    ***OBSOLETE.*** Use Get-CNtfsHardLink instead.
+
+    .DESCRIPTION
+    ***OBSOLETE.*** Use Get-CNtfsHardLink instead.
+
+    .EXAMPLE
+    Get-CNtfsHardLink -Path $Path
+
+    Demonstrates that you should use `Get-CNtfsHardLink` instead.
+    #>
+    [CmdletBinding()]
+    param(
+        # The path whose hard links to get/return. Must exist.
+        [Parameter(Mandatory)]
+        [String] $Path
+    )
+
+    $msg = 'The Get-FileHardLink function is obsolete and will removed in the next major version of ' +
+           'Carbon.FileSystem. Please use Get-CNtfsHardLink instead.'
+    Write-Warning -Message $msg
+
+    Get-CNtfsHardLink @PSBoundParameters
 }
