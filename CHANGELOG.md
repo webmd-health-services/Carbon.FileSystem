@@ -31,6 +31,13 @@ from Carbon to Carbon.FileSystem, do the following:
   | `-Permission ContainerAndSubContainersAndLeaves`        | `-Permission FolderSubfoldersAndFiles`
   | `-Permission ChildContainersAndChildLeaves`             | `-Permission SubfoldersAndFilesOnly -OnlyApplyToChildFilesAndFolders`
 
+### Added
+
+* `Get-CNtfsHardLink`. Replaces `Get-FileHardLink`.
+
+### Deprecated
+
+* Function `Get-FileHardLink`. Use the new `Get-CNtfsHardLink` function.
 
 
 ## 1.0.1
@@ -44,6 +51,6 @@ Adding Guid to `Carbon.FileSystem.psd1` which is needed to publish to PSGallery.
 
 > Released 5 May 2022
 
-* Added `Get-FileHardLink` which is used to retrieve hard link targets.  This fixes a breaking change from Windows
+* Added `Get-CNtfsHardLink` which is used to retrieve hard link targets.  This fixes a breaking change from Windows
   PowerShell where the `Target` property is not populated in PowerShell Core when using `Get-Item` to retrieve a
   previously linked file.

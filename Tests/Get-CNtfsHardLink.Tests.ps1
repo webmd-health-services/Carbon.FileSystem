@@ -53,7 +53,7 @@ BeforeAll {
         {
             $Path = Join-Path -Path $In -ChildPath $Path
         }
-        else 
+        else
         {
             $Path = Join-Path -Path $testRoot -ChildPath $Path
         }
@@ -104,13 +104,13 @@ BeforeAll {
             {
                 $Targets = Join-Path -Path $testRoot -ChildPath $Targets -Resolve
             }
-            Get-FileHardLink -Path $fullPath | Should -Not:$Not -Contain $Targets
+            Get-CNtfsHardLink -Path $fullPath | Should -Not:$Not -Contain $Targets
         }
     }
 }
 
-Describe 'Get-FileHardLink' {
-    BeforeEach { 
+Describe 'Get-CNtfsHardLink' {
+    BeforeEach {
         $script:testRoot = $null
         $script:failed = $false
         $script:testRoot = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
