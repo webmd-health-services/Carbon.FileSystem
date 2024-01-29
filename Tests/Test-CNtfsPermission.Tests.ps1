@@ -15,8 +15,6 @@ BeforeAll {
     New-Item (Join-Path -path $script:tempDir -ChildPath 'File') -ItemType File
 
     $script:dirPath = Join-Path -Path $script:tempDir -ChildPath 'Directory'
-    $script:filePath = Join-Path -Path $script:dirPath -ChildPath 'File'
-    New-Item -Path $script:filePath -ItemType File
     Grant-CNtfsPermission -Identity $script:identity `
                           -Permission ReadAndExecute `
                           -Path $script:dirPath `
@@ -27,6 +25,9 @@ BeforeAll {
         Path = $script:dirPath;
         Identity = $script:identity;
     }
+
+    $script:filePath = Join-Path -Path $script:dirPath -ChildPath 'File'
+    New-Item -Path $script:filePath -ItemType File
 
     $script:testFilePermArgs = @{
         Path = $script:filePath;
@@ -89,27 +90,20 @@ Describe 'Test-CNtfsPermission' {
             Should -BeFalse
     }
 
-    It 'checks granted inheritance flags' {
+    It 'checks applies to flags' {
         Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderAndFiles |
-            Should -BeTrue
+            Should -BeFalse
+        Test-CNtfsPermission @testDirPermArgs `
+                             -Permission 'ReadAndExecute' `
+                             -ApplyTo FolderAndFiles `
+                             -OnlyApplyToChildFilesAndFolders |
+            Should -BeFalse
+        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FilesOnly |
+            Should -BeFalse
         Test-CNtfsPermission @testDirPermArgs `
                              -Permission 'ReadAndExecute' `
                              -ApplyTo FilesOnly `
                              -OnlyApplyToChildFilesAndFolders |
-            Should -BeTrue
-    }
-
-    It 'checks exact ungranted inheritance flags' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderAndFiles -Strict |
-            Should -BeFalse
-    }
-
-    It 'checks exact granted inheritance flags' {
-        Test-CNtfsPermission @testDirPermArgs `
-                             -Permission 'ReadAndExecute' `
-                             -ApplyTo FilesOnly `
-                             -OnlyApplyToChildFilesAndFolders `
-                             -Strict |
             Should -BeTrue
     }
 }

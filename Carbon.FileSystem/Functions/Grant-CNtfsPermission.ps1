@@ -69,7 +69,7 @@ function Grant-CNtfsPermission
     to any sub-directory.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='DefaultAppliesToFlags')]
     [OutputType([Security.AccessControl.FileSystemAccessRule])]
     param(
         # The folder/file path on which the permissions should be granted.
@@ -95,12 +95,14 @@ function Grant-CNtfsPermission
         # * SubfoldersAndFilesOnly
         # * SubfoldersOnly
         # * FilesOnly
+        [Parameter(Mandatory, ParameterSetName='SetAppliesToFlags')]
         [ValidateSet('FolderOnly', 'FolderSubfoldersAndFiles', 'FolderAndSubfolders', 'FolderAndFiles',
             'SubfoldersAndFilesOnly', 'SubfoldersOnly', 'FilesOnly')]
-        [String] $ApplyTo = 'FolderSubfoldersAndFiles',
+        [String] $ApplyTo,
 
         # Only apply the permissions to files and/or folders within the folder. Don't set this if the Path parameter is
         # to a file.
+        [Parameter(ParameterSetName='SetAppliesToFlags')]
         [switch] $OnlyApplyToChildFilesAndFolders,
 
         # The type of rule to apply, either `Allow` or `Deny`. The default is `Allow`, which will allow access to the
@@ -124,12 +126,18 @@ function Grant-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $PSBoundParameters.Remove('ApplyTo') | Out-Null
-    $PSBoundParameters.Remove('OnlyApplyToChildFilesAndFolders') | Out-Null
+    if (-not $ApplyTo)
+    {
+        $ApplyTo = 'FolderSubfoldersAndFiles'
+    }
 
-    Add-FlagsArgument -Argument $PSBoundParameters `
-                      -ApplyTo $ApplyTo `
-                      -OnlyApplyToChildFilesAndFolders:$OnlyApplyToChildFilesAndFolders
+    $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonPermissionsApplyTo
+
+    if ($PSBoundParameters.ContainsKey('OnlyApplyToChildFilesAndFolders'))
+    {
+        $PSBoundParameters.Remove('OnlyApplyToChildFilesAndFolders')
+        $PSBoundParameters['OnlyApplyToChildren'] = $OnlyApplyToChildFilesAndFolders
+    }
 
     Grant-CPermission @PSBoundParameters
 }

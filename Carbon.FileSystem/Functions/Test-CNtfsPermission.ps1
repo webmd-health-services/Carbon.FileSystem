@@ -46,7 +46,7 @@ function Test-CNtfsPermission
 
     Demonstrates how to test for inheritance/propogation flags, in addition to permissions.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='SkipAppliesToFlags')]
     param(
         # The path to a folder/file on which the permissions should be checked.
         [Parameter(Mandatory)]
@@ -71,12 +71,14 @@ function Test-CNtfsPermission
         # * SubfoldersAndFilesOnly
         # * SubfoldersOnly
         # * FilesOnly
+        [Parameter(Mandatory, ParameterSetName='TestAppliesToFlags')]
         [ValidateSet('FolderOnly', 'FolderSubfoldersAndFiles', 'FolderAndSubfolders', 'FolderAndFiles',
             'SubfoldersAndFilesOnly', 'SubfoldersOnly', 'FilesOnly')]
         [String] $ApplyTo,
 
         # Checks that the permissions are only applied to child files and folders. By default, the permission's
         # inheritnace is ignored.
+        [Parameter(ParameterSetName='TestAppliesToFlags')]
         [switch] $OnlyApplyToChildFilesAndFolders,
 
         # Include inherited permissions in the check.
@@ -90,15 +92,14 @@ function Test-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $PSBoundParameters.Remove('OnlyApplyToChildFilesAndFolders') | Out-Null
-
-    if ($ApplyTo)
+    if ($PSCmdlet.ParameterSetName -eq 'TestAppliesToFlags')
     {
-        $PSBoundParameters.Remove('ApplyTo') | Out-Null
-
-        Add-FlagsArgument -Argument $PSBoundParameters `
-                          -ApplyTo $ApplyTo `
-                          -OnlyApplyToChildFilesAndFolders:$OnlyApplyToChildFilesAndFolders
+        if ($ApplyTo)
+        {
+            $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonPermissionsApplyTo
+        }
+        $PSBoundParameters.Remove('OnlyApplyToChildFilesAndFolders') | Out-Null
+        $PSBoundParameters['OnlyApplyToChildren'] = $OnlyApplyToChildFilesAndFolders
     }
 
     Test-CPermission @PSBoundParameters
