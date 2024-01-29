@@ -6,11 +6,14 @@ function Get-CNtfsPermission
     Gets the permissions (access control rules) for a file or directory.
 
     .DESCRIPTION
-    Permissions for a specific identity can also be returned. Access control entries are for a path's discretionary
-    access control list.
+    The `Get-CNtfsPermission` function gets permissions on a file or directory. Permissions returned are the
+    `[Security.AccessControl.FileSystemAccessRule]` objects from the file/directory's ACL. By default, all non-inherited
+    permissions are returned. Pass the path to the file/directory whose permissions to get to the `Path` parameter. To
+    also get inherited permissions, use the `Inherited` switch.
 
-    To return inherited permissions, use the `Inherited` switch.  Otherwise, only non-inherited (i.e. explicit)
-    permissions are returned.
+    To get the permissions a specific identity has on the file/directory, pass that username/group name to the
+    `Identity` parameter. If the identity doesn't exist, or it doesn't have any permissions, no error is written and
+    nothing is returned.
 
     .OUTPUTS
     System.Security.AccessControl.FileSystemAccessRule.
