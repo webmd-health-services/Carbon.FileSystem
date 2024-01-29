@@ -5,6 +5,7 @@ Build:
     Prerelease:
     - main: ""
     - "*": rc$(WHISKEY_BUILD_NUMBER)
+    IncrementPrereleaseVersion: true
 
 # Update the AppVeyor build/version number.
 - Exec:
