@@ -11,7 +11,7 @@ function Test-CNtfsPermission
     `Permission` parameter. If the user/group has the given permission on the given path, the function returns `$true`,
     otherwise it returns `$false`.
 
-    Inherited permissions on *not* checked by default.  To check inherited permission, use the `-Inherited` switch.
+    Inherited permissions are *not* checked by default. To check inherited permission, use the `-Inherited` switch.
 
     By default, the permission check is not exact, i.e. the user may have additional permissions to what you're
     checking.  If you want to make sure the user has *exactly* the permission you want, use the `-Strict` switch.
@@ -56,7 +56,9 @@ function Test-CNtfsPermission
         [Parameter(Mandatory)]
         [String] $Identity,
 
-        # The permission to test for: e.g. FullControl, Read, etc.
+        # The permission to test for: e.g. FullControl, Read, etc. See
+        # [System.Security.AccessControl.FileSystemRights](http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights.aspx)
+        # for the list of rights with descriptions.
         [Parameter(Mandatory)]
         [FileSystemRights[]] $Permission,
 
