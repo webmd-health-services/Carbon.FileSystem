@@ -131,7 +131,7 @@ function Grant-CNtfsPermission
         $ApplyTo = 'FolderSubfoldersAndFiles'
     }
 
-    $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonPermissionsApplyTo
+    $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonSecurityApplyTo
 
     if ($PSBoundParameters.ContainsKey('OnlyApplyToChildFilesAndFolders'))
     {

@@ -24,7 +24,9 @@ Set-StrictMode -Version 'Latest'
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Modules\Carbon.Permissions' -Resolve) -Verbose:$false
+Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'Modules\Carbon.Security' -Resolve) `
+              -Function @('Get-CPermission', 'Grant-CPermission', 'Revoke-CPermission', 'Test-CPermission') `
+              -Verbose:$false
 
 Add-Type @'
 using System;
