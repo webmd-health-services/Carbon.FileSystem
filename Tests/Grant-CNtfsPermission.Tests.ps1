@@ -70,6 +70,7 @@ BeforeAll {
 
     function Invoke-GrantPermissions
     {
+        [CmdletBinding()]
         param(
             $Identity,
             $Permissions,
@@ -175,12 +176,15 @@ Describe 'Grant-CNtfsPermission' {
         $file = New-TestFile
         $identity = 'BUILTIN\Administrators'
         $permissions = 'Read','Write'
+        $warnings = @()
 
         Invoke-GrantPermissions -Identity $identity `
                                 -Permissions $permissions `
                                 -Path $file `
                                 -InheritanceFlag 'None' `
-                                -PropagationFlag 'None'
+                                -PropagationFlag 'None' `
+                                -WarningVariable 'warnings'
+        $warnings | Should -BeNullOrEmpty
     }
 
     It 'grants permissions on directories' {
@@ -388,16 +392,16 @@ Describe 'Grant-CNtfsPermission' {
         $item = Get-Item -Path $script:path
         $item.Attributes = $item.Attributes -bor [IO.FileAttributes]::Hidden
 
-        $result = Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
+        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
         $Global:Error.Count | Should -Be 0
     }
 
     It 'fails if the path does not exist' {
         $result = Grant-CNtfsPermission -Identity $script:user `
-                                    -Permission Read `
-                                    -Path 'C:\I\Do\Not\Exist' `
-                                    -PassThru `
-                                    -ErrorAction SilentlyContinue
+                                        -Permission Read `
+                                        -Path 'C:\I\Do\Not\Exist' `
+                                        -PassThru `
+                                        -ErrorAction SilentlyContinue
         $result | Should -BeNullOrEmpty
         $Global:Error.Count | Should -BeGreaterThan 0
         $Global:Error[0] | Should -Match 'that path does not exist'

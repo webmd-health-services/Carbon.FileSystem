@@ -126,12 +126,15 @@ function Grant-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if (-not $ApplyTo)
+    if (-not $ApplyTo -and (Test-Path -Path $Path -PathType Container))
     {
         $ApplyTo = 'FolderSubfoldersAndFiles'
     }
 
-    $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonSecurityApplyTo
+    if ($ApplyTo)
+    {
+        $PSBoundParameters['ApplyTo'] = $ApplyTo | ConvertTo-CarbonSecurityApplyTo
+    }
 
     if ($PSBoundParameters.ContainsKey('OnlyApplyToChildFilesAndFolders'))
     {
