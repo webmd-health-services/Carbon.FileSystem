@@ -15,21 +15,21 @@ from Carbon to Carbon.FileSystem, do the following:
 * Replace usages of the `Test-CNtfsPermission` function's `-Exact` switch to `-Strict`.
 * Using the table below, replace usages of `Grant-CNtfsPermission` and `Test-CNtfsPermission` arguments in the left
   column with the new arguments from the right column.
-  | Old Argument                                            | New Argument(s)
-  |---------------------------------------------------------|---------------------------------------------------------
-  | `-Permission Container`                                 | `-Permission FolderOnly`
-  | `-Permission SubContainers`                             | `-Permission SubfoldersOnly`
-  | `-Permission Leaves`                                    | `-Permission FilesOnly`
-  | `-Permission ChildContainers`                           | `-Permission SubfoldersOnly -OnlyApplyToChildFilesAndFolders`
-  | `-Permission ChildLeaves`                               | `-Permission FilesOnly -OnlyApplyToChildFilesAndFolders`
-  | `-Permission ContainerAndSubContainers`                 | `-Permission FolderAndSubfolders`
-  | `-Permission ContainerAndLeaves`                        | `-Permission FolderAndFiles`
-  | `-Permission SubContainerAndLeaves`                     | `-Permission SubfoldersAndFilesOnly`
-  | `-Permission ContainerAndChildContainers`               | `-Permission FolderAndSubfolders -OnlyApplyToChildFilesAndFolders`
-  | `-Permission ContainerAndChildLeaves`                   | `-Permission FolderAndFiles -OnlyApplyToChildFilesAndFolders`
-  | `-Permission ContainerAndChildContainersAndChildLeaves` | `-Permission FolderSubfoldersAndFiles -OnlyApplyToChildFilesAndFolders`
-  | `-Permission ContainerAndSubContainersAndLeaves`        | `-Permission FolderSubfoldersAndFiles`
-  | `-Permission ChildContainersAndChildLeaves`             | `-Permission SubfoldersAndFilesOnly -OnlyApplyToChildFilesAndFolders`
+  | Old Argument                                         | New Argument(s)
+  |------------------------------------------------------|---------------------------------------------------------------------
+  | `-ApplyTo Container`                                 | `-ApplyTo FolderOnly`
+  | `-ApplyTo SubContainers`                             | `-ApplyTo SubfoldersOnly`
+  | `-ApplyTo Leaves`                                    | `-ApplyTo FilesOnly`
+  | `-ApplyTo ChildContainers`                           | `-ApplyTo SubfoldersOnly -OnlyApplyToChildFilesAndFolders`
+  | `-ApplyTo ChildLeaves`                               | `-ApplyTo FilesOnly -OnlyApplyToChildFilesAndFolders`
+  | `-ApplyTo ContainerAndSubContainers`                 | `-ApplyTo FolderAndSubfolders`
+  | `-ApplyTo ContainerAndLeaves`                        | `-ApplyTo FolderAndFiles`
+  | `-ApplyTo SubContainerAndLeaves`                     | `-ApplyTo SubfoldersAndFilesOnly`
+  | `-ApplyTo ContainerAndChildContainers`               | `-ApplyTo FolderAndSubfolders -OnlyApplyToChildFilesAndFolders`
+  | `-ApplyTo ContainerAndChildLeaves`                   | `-ApplyTo FolderAndFiles -OnlyApplyToChildFilesAndFolders`
+  | `-ApplyTo ContainerAndChildContainersAndChildLeaves` | `-ApplyTo FolderSubfoldersAndFiles -OnlyApplyToChildFilesAndFolders`
+  | `-ApplyTo ContainerAndSubContainersAndLeaves`        | `-ApplyTo FolderSubfoldersAndFiles`
+  | `-ApplyTo ChildContainersAndChildLeaves`             | `-ApplyTo SubfoldersAndFilesOnly -OnlyApplyToChildFilesAndFolders`
 
 ### Added
 
