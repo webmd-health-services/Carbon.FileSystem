@@ -2,7 +2,13 @@
 
 # Carbon.FileSystem Changelog
 
+## 1.1.1
+
+Reducing directory nesting of internal, private, nested modules.
+
 ## 1.1.0
+
+> Released 10 Jun 2024
 
 ### Upgrade Instructions
 
@@ -15,6 +21,7 @@ from Carbon to Carbon.FileSystem, do the following:
 * Replace usages of the `Test-CNtfsPermission` function's `-Exact` switch to `-Strict`.
 * Using the table below, replace usages of `Grant-CNtfsPermission` and `Test-CNtfsPermission` arguments in the left
   column with the new arguments from the right column.
+
   | Old Argument                                         | New Argument(s)
   |------------------------------------------------------|---------------------------------------------------------------------
   | `-ApplyTo Container`                                 | `-ApplyTo FolderOnly`
