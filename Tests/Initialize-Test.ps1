@@ -56,7 +56,7 @@ try
                   -Function @('Install-CDirectory')
 
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon.Accounts' -Resolve) `
-                  -Function @('Resolve-CIdentityName')
+                  -Function @('Resolve-CPrincipalName')
 }
 finally
 {
