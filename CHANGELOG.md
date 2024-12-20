@@ -2,7 +2,13 @@
 
 # Carbon.FileSystem Changelog
 
+## 1.1.2
+
+Updating dependencies.
+
 ## 1.1.1
+
+> Released 3 Dec 2024
 
 Reducing directory nesting of internal, private, nested modules.
 
