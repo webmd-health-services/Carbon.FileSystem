@@ -18,7 +18,7 @@
     RootModule = 'Carbon.FileSystem.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.2'
+    ModuleVersion = '1.2.0'
 
     # ID used to uniquely identify this module
     GUID = '84e0a546-5791-4c7e-a05b-29d592029398'
@@ -83,6 +83,7 @@
         'Get-FileHardLink',
         'Grant-CNtfsPermission',
         'Revoke-CNtfsPermission',
+        'Set-CNtfsOwner',
         'Test-CNtfsPermission'
     )
 
