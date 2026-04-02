@@ -20,7 +20,7 @@ Describe 'Install-CDirectory' {
         $dir | Should -Not -Exist
         try
         {
-            Install-CDirectory -Path $dir
+            Install-CDirectory -Path $dir | Should -BeNullOrEmpty
             $Global:Error | Should -BeNullOrEmpty
             [IO.Directory]::Exists($dir) | Should -BeTrue
         }
@@ -52,6 +52,23 @@ Describe 'Install-CDirectory' {
         try
         {
             Install-CDirectory -Path $dir
+            $Global:Error | Should -BeNullOrEmpty
+            [IO.Directory]::Exists($dir) | Should -BeTrue
+        }
+        finally
+        {
+            Remove-Item $dir
+        }
+    }
+
+    It 'can return directory' {
+        $dir = JOin-Path -Path $script:root -ChildPath ([IO.Path]::GetRandomFileName())
+        try
+        {
+            $result = Install-CDirectory -Path $dir -PassThru
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [IO.DirectoryInfo]
+            $result.FullName | Should -Be $dir
             $Global:Error | Should -BeNullOrEmpty
             [IO.Directory]::Exists($dir) | Should -BeTrue
         }

@@ -10,6 +10,7 @@
 * `Install-CDirectory` functon for creating directories. Migrated from Carbon.
 * `New-CTempDirectory` function for creating temp directories. Migrated from Carbon.
 * `Uninstall-CDirectory` function for removing directories. Migrated from Carbon.
+* `-PassThru` switch to `Install-CDirectory` to return an `[IO.DirectoryInfo]` object for the directory.
 
 ### Deprecated
 

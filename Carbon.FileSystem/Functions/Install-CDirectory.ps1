@@ -9,6 +9,8 @@ function Install-CDirectory
     The `Install-CDirectory` function creates a directory. If the directory already exists, it does nothing. If any
     parent directories don't exist, they are created, too.
 
+    To return a `DirectoryInfo` object for the directory, use the `-PassThru` switch.
+
     .EXAMPLE
     Install-CDirectory -Path 'C:\Projects\Carbon'
 
@@ -19,14 +21,22 @@ function Install-CDirectory
     param(
         # The path to the directory to create.
         [Parameter(Mandatory)]
-        [String] $Path
+        [String] $Path,
+
+        # If set, returns a `DirectoryInfo` object for the directory.
+        [switch] $PassThru
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if( -not (Test-Path -Path $Path -PathType Container) )
+    if (-not (Test-Path -Path $Path -PathType Container))
     {
         New-Item -Path $Path -ItemType 'Directory' | Out-String | Write-Verbose
+    }
+
+    if ($PassThru)
+    {
+        Get-Item -LiteralPath $Path
     }
 }
