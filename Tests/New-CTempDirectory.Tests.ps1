@@ -1,59 +1,49 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
 
-function Start-TestFixture
-{
-    & (Join-Path -Path $PSScriptRoot '..\Initialize-CarbonTest.ps1' -Resolve)
+BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem' -Resolve) -Verbose:$false
 }
 
-function Test-NewTempDir
-{
-    $tmpDir = New-TempDir 
-    try
-    {
-        Assert-DirectoryExists $tmpDir
+Describe 'New-CTempDirectory' {
+    It 'creates new temp directory' {
+        $tmpDir = New-CTempDirectory
+        try
+        {
+            [IO.Directory]::Exists($tmpDir.FullName) | Should -BeTrue
+        }
+        finally
+        {
+            Uninstall-CDirectory -Path $tmpDir -Recurse
+        }
     }
-    finally
-    {
-        Uninstall-Directory -Path $tmpDir -Recurse
+
+    It 'prefixes directory name'{
+        $tempDir = New-CTempDirectory -Prefix 'fubar'
+        try
+        {
+            [IO.Directory]::Exists($tempDir.FullName) | Should -BeTrue
+            $tempDir.Name | Should -BeLike 'fubar*'
+        }
+        finally
+        {
+            Uninstall-CDirectory -Path $tempDir -Recurse
+        }
+    }
+
+    It 'sanitizes prefix'{
+        $tempDir = New-CTempDirectory -Prefix $PSCommandPath
+        try
+        {
+            [IO.Directory]::Exists($tempDir.FullName) | Should -BeTrue
+            $tempDir.Name | Should -BeLike "$(Split-Path -Leaf -Path $PSCommandPath)*"
+        }
+        finally
+        {
+            Uninstall-CDirectory -Path $tempDir -Recurse
+        }
     }
 }
-
-function Test-ShouldSupportPrefix
-{
-    $tempDir = New-TempDir -Prefix 'fubar'
-    try
-    {
-        Assert-DirectoryExists $tempDir
-        Assert-Like $tempDir.Name 'fubar*'
-    }
-    finally
-    {
-        Uninstall-Directory -Path $tempDir -Recurse
-    }
-}
-
-function Test-ShouldSupportPathsForPrefix
-{
-    $tempDir = New-TempDirectory -Prefix $PSCommandPath
-    try
-    {
-        Assert-DirectoryExists $tempDir
-        Assert-Like $tempDir.Name ('{0}*' -f (Split-Path -Leaf -Path $PSCommandPath))
-    }
-    finally
-    {
-        Uninstall-Directory -Path $tempDir -Recurse
-    }
-}
-

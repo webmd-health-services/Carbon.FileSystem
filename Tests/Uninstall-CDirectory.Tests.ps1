@@ -1,51 +1,48 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-function Start-Test
-{
-    $dir = Join-Path -Path $env:TEMP -ChildPath ([IO.Path]::GetRandomFileName())
-    Install-Directory -Path $dir
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
+BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem' -Resolve) -Verbose:$false
+
+    $script:dir = $null
 }
 
-function Stop-Test
-{
-    if( (Test-Path -Path $dir -PathType Container) )
-    {
-        Remove-Item -Path $dir -Recurse
+Describe 'Uninstall-CDirectory' {
+    BeforeEach {
+        $script:dir = Join-Path -Path $env:TEMP -ChildPath ([IO.Path]::GetRandomFileName())
+        Install-CDirectory -Path $dir
+        $Global:Error.Clear()
     }
-}
 
-function Test-ShouldRemoveDirectory
-{
-    Uninstall-Directory -Path $dir
-    Assert-NoError
-    Assert-DirectoryDoesNotExist $dir
-}
+    AfterEach{
+        if( (Test-Path -Path $script:dir -PathType Container) )
+        {
+            Remove-Item -Path $script:dir -Recurse
+        }
+    }
 
-function Test-ShouldHandleDirectoryThatDoesNotExist
-{
-    Uninstall-Directory -Path $dir
-    Uninstall-Directory -Path $dir
-    Assert-NoError
-    Assert-DirectoryDoesNotExist $dir
-}
+    It 'removes directory'{
+        Uninstall-CDirectory -Path $script:dir
+        $Global:Error | Should -BeNullOrEmpty
+        $script:dir | Should -Not -Exist
+    }
 
-function Test-ShouldDeleteRecursively
-{
-    $filePath = Join-Path -Path $dir -ChildPath 'file'
-    New-Item -Path $filePath -ItemType 'File'
-    Uninstall-Directory -Path $dir -Recurse
-    Assert-NoError
-    Assert-DirectoryDoesNotExist $dir
+    It 'ignores non-existent directory' {
+        Uninstall-CDirectory -Path $script:dir
+        Uninstall-CDirectory -Path $script:dir
+        $Global:Error | Should -BeNullOrEmpty
+        $script:dir | Should -Not -Exist
+    }
+
+    It 'deletes recursively' {
+        $filePath = Join-Path -Path $script:dir -ChildPath 'file'
+        New-Item -Path $filePath -ItemType 'File'
+        Uninstall-CDirectory -Path $script:dir -Recurse
+        $Global:Error | Should -BeNullOrEmpty
+        $script:dir | Should -Not -Exist
+    }
 }
