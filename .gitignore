@@ -1,4 +1,7 @@
 /.output
-/PSModules
 /.vscode
+/Carbon.FileSystem/*.md
+/Carbon.FileSystem/LICENSE
 /Carbon.FileSystem/Modules
+/Carbon.FileSystem/NOTICE
+/PSModules

@@ -22,10 +22,16 @@ Set-StrictMode -Version 'Latest'
 # Functions should use $moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a
 # module in development has its functions in the Functions directory.
-$moduleRoot = $PSScriptRoot
+$script:moduleRoot = $PSScriptRoot
 
-Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'Modules\Carbon.Security' -Resolve) `
+$psModulesPath = Join-Path -Path $script:moduleRoot -ChildPath 'Modules' -Resolve
+
+Import-Module -Name (Join-Path -Path $psModulesPath -ChildPath 'Carbon.Security' -Resolve) `
               -Function @('Get-CPermission', 'Grant-CPermission', 'Revoke-CPermission', 'Test-CPermission') `
+              -Verbose:$false
+
+Import-Module -Name (Join-Path -Path $psModulesPath -ChildPath 'Carbon.Accounts' -Resolve) `
+              -Function @('Resolve-CPrincipal', 'Resolve-CPrincipalName') `
               -Verbose:$false
 
 Add-Type @'

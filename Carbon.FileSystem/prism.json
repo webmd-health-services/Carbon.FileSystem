@@ -1,6 +1,10 @@
 {
   "PSModules": [
     {
+      "Name": "Carbon.Accounts",
+      "Version": "2.*"
+    },
+    {
       "Name": "Carbon.Security",
       "Version": "1.*"
     }

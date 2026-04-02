@@ -2,7 +2,13 @@
 
 # Carbon.FileSystem Changelog
 
+## 1.2.0
+
+Adding `Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
+
 ## 1.1.2
+
+> Released 20 Dec 2024
 
 Updating dependencies.
 
