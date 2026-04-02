@@ -11,6 +11,8 @@
 * `New-CTempDirectory` function for creating temp directories. Migrated from Carbon.
 * `Uninstall-CDirectory` function for removing directories. Migrated from Carbon.
 * `-PassThru` switch to `Install-CDirectory` to return an `[IO.DirectoryInfo]` object for the directory.
+* Linux and macOS support to `Install-CDirectory`, `New-CTempDirectory`, and `Uninstall-CDirectory`.
+* `Get-CTempPath` function for getting the current user's temp path.
 
 ### Deprecated
 

@@ -4,6 +4,15 @@ using namespace System.IO
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+BeforeDiscovery {
+    if (-not (Test-Path 'variable:IsWindows'))
+    {
+        $script:IsWindows = $true
+        $script:IsLinux = $false
+        $script:IsMacOS = $false
+    }
+}
+
 BeforeAll {
     Set-StrictMode -Version 'Latest'
 
@@ -15,11 +24,14 @@ BeforeAll {
     New-Item (Join-Path -path $script:tempDir -ChildPath 'File') -ItemType File
 
     $script:dirPath = Join-Path -Path $script:tempDir -ChildPath 'Directory'
-    Grant-CNtfsPermission -Identity $script:identity `
-                          -Permission ReadAndExecute `
-                          -Path $script:dirPath `
-                          -ApplyTo FilesOnly `
-                          -OnlyApplyToChildFilesAndFolders
+    if ($IsWindows)
+    {
+        Grant-CNtfsPermission -Identity $script:identity `
+                              -Permission ReadAndExecute `
+                              -Path $script:dirPath `
+                              -ApplyTo FilesOnly `
+                              -OnlyApplyToChildFilesAndFolders
+    }
 
     $script:testDirPermArgs = @{
         Path = $script:dirPath;
@@ -40,71 +52,97 @@ AfterAll {
 }
 
 Describe 'Test-CNtfsPermission' {
-    BeforeEach {
-        $Global:Error.Clear()
+    Context 'On Windows' -Skip:(-not $IsWindows) {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
+
+        It 'fails on non-existent path' {
+            Test-CNtfsPermission -Path 'C:\I\Do\Not\Exist' `
+                                -Identity $script:identity `
+                                -Permission 'FullControl' `
+                                -ErrorAction SilentlyContinue |
+                Should -BeNullOrEmpty
+            $Global:Error | Should -HaveCount 1
+            $Global:Error | Should -Match 'path does not exist'
+        }
+
+        It 'checks ungranted permission' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'Write' | Should -BeFalse
+        }
+
+        It 'checks granted permission' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'Read' | Should -BeTrue
+        }
+
+        It 'checks exact partial permission' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'Read' -Strict | Should -BeFalse
+        }
+
+        It 'checks exact permission' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -Strict | Should -BeTrue
+        }
+
+        It 'excludes inherited permission' {
+            Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' | Should -BeFalse
+        }
+
+        It 'includes inherited permission' {
+            Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Inherited | Should -BeTrue
+        }
+
+        It 'excludes inherited partial permission' {
+            Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Strict | Should -BeFalse
+        }
+
+        It 'includes inherited exact permission' {
+            Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Inherited -Strict | Should -BeTrue
+        }
+
+        It 'checks ungranted inheritance flags' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderSubfoldersAndFiles |
+                Should -BeFalse
+        }
+
+        It 'checks applies to flags' {
+            Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderAndFiles |
+                Should -BeFalse
+            Test-CNtfsPermission @testDirPermArgs `
+                                -Permission 'ReadAndExecute' `
+                                -ApplyTo FolderAndFiles `
+                                -OnlyApplyToChildFilesAndFolders |
+                Should -BeFalse
+            Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FilesOnly |
+                Should -BeFalse
+            Test-CNtfsPermission @testDirPermArgs `
+                                -Permission 'ReadAndExecute' `
+                                -ApplyTo FilesOnly `
+                                -OnlyApplyToChildFilesAndFolders |
+                Should -BeTrue
+        }
     }
 
-    It 'fails on non-existent path' {
-        Test-CNtfsPermission -Path 'C:\I\Do\Not\Exist' `
-                             -Identity $script:identity `
-                             -Permission 'FullControl' `
-                             -ErrorAction SilentlyContinue |
-            Should -BeNullOrEmpty
-        $Global:Error | Should -HaveCount 1
-        $Global:Error | Should -Match 'path does not exist'
-    }
+    Context 'On Linux and macOS' -Skip:$IsWindows {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
 
-    It 'checks ungranted permission' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'Write' | Should -BeFalse
-    }
+        It 'fails' {
+            Test-CNtfsPermission -Path 'anyPath' `
+                                 -Identity 'anyIdentity' `
+                                 -Permission 'FullControl' `
+                                 -ErrorAction SilentlyContinue |
+                Should -BeNullOrEmpty
+            $Global:Error | Should -Match 'Test-CNtfsPermission function is only supported on Windows'
+        }
 
-    It 'checks granted permission' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'Read' | Should -BeTrue
-    }
-
-    It 'checks exact partial permission' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'Read' -Strict | Should -BeFalse
-    }
-
-    It 'checks exact permission' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -Strict | Should -BeTrue
-    }
-
-    It 'excludes inherited permission' {
-        Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' | Should -BeFalse
-    }
-
-    It 'includes inherited permission' {
-        Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Inherited | Should -BeTrue
-    }
-
-    It 'excludes inherited partial permission' {
-        Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Strict | Should -BeFalse
-    }
-
-    It 'includes inherited exact permission' {
-        Test-CNtfsPermission @testFilePermArgs -Permission 'ReadAndExecute' -Inherited -Strict | Should -BeTrue
-    }
-
-    It 'checks ungranted inheritance flags' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderSubfoldersAndFiles |
-            Should -BeFalse
-    }
-
-    It 'checks applies to flags' {
-        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FolderAndFiles |
-            Should -BeFalse
-        Test-CNtfsPermission @testDirPermArgs `
-                             -Permission 'ReadAndExecute' `
-                             -ApplyTo FolderAndFiles `
-                             -OnlyApplyToChildFilesAndFolders |
-            Should -BeFalse
-        Test-CNtfsPermission @testDirPermArgs -Permission 'ReadAndExecute' -ApplyTo FilesOnly |
-            Should -BeFalse
-        Test-CNtfsPermission @testDirPermArgs `
-                             -Permission 'ReadAndExecute' `
-                             -ApplyTo FilesOnly `
-                             -OnlyApplyToChildFilesAndFolders |
-            Should -BeTrue
+        It 'can fail silently' {
+            Test-CNtfsPermission -Path 'anyPath' `
+                                 -Identity 'anyIdentity' `
+                                 -Permission 'FullControl' `
+                                 -ErrorAction Ignore |
+                Should -BeNullOrEmpty
+            $Global:Error | Should -BeNullOrEmpty
+        }
     }
 }

@@ -13,7 +13,7 @@ BeforeAll {
 
 Describe 'Uninstall-CDirectory' {
     BeforeEach {
-        $script:dir = Join-Path -Path $env:TEMP -ChildPath ([IO.Path]::GetRandomFileName())
+        $script:dir = Join-Path -Path (Get-CTempPath) -ChildPath ([IO.Path]::GetRandomFileName())
         Install-CDirectory -Path $dir
         $Global:Error.Clear()
     }

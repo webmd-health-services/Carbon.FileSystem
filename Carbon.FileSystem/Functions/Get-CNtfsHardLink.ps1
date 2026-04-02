@@ -23,6 +23,13 @@ function Get-CNtfsHardLink
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
+    if (-not $IsWindows)
+    {
+        $msg = 'The Get-CNtfsHardLink function is only supported on Windows.'
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
     if( -not (Resolve-Path -LiteralPath $Path) )
     {
         return

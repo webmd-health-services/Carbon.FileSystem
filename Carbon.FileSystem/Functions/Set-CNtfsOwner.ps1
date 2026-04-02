@@ -35,10 +35,25 @@ function Set-CNtfsOwner
         [String] $Identity
     )
 
-    process
+    begin
     {
         Set-StrictMode -Version 'Latest'
-        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+        if (-not $IsWindows)
+        {
+            $msg = 'The Set-CNtfsOwner function is only supported on Windows.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+    }
+
+    process
+    {
+        if (-not $IsWindows)
+        {
+            return
+        }
 
         if (-not (Test-Path -Path $Path))
         {

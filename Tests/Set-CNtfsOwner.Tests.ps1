@@ -3,6 +3,15 @@
 #Requires -RunAsAdministrator
 Set-StrictMode -Version 'Latest'
 
+BeforeDiscovery {
+    if (-not (Test-Path 'variable:IsWindows'))
+    {
+        $script:IsWindows = $true
+        $script:IsLinux = $false
+        $script:IsMacOS = $false
+    }
+}
+
 BeforeAll {
     Set-StrictMode -Version 'Latest'
 
@@ -12,13 +21,17 @@ BeforeAll {
 
     $psModulesPath = Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem\M' -Resolve
 
-    Import-Module -Name (Join-Path -Path $psModulesPath -ChildPath 'Carbon.Accounts' -Resolve) `
-                  -Function @('Resolve-CPrincipal', 'Resolve-CPrincipalName') `
-                  -Prefix 'T' `
-                  -Verbose:$false
+    $script:currentUserName = ''
+    if ($IsWindows)
+    {
+        Import-Module -Name (Join-Path -Path $psModulesPath -ChildPath 'Carbon.Accounts' -Resolve) `
+                    -Function @('Resolve-CPrincipal', 'Resolve-CPrincipalName') `
+                    -Prefix 'T' `
+                    -Verbose:$false
 
-    $script:currentUserName =
-        Resolve-TCPrincipalName -Name "$([Environment]::UserDomainName)\$([Environment]::UserName)"
+        $script:currentUserName =
+            Resolve-TCPrincipalName -Name "$([Environment]::UserDomainName)\$([Environment]::UserName)"
+    }
 
     function GivenFile
     {
@@ -66,57 +79,82 @@ BeforeAll {
 }
 
 Describe 'Set-CNtfsOwner' {
-    BeforeEach {
-        $Global:Error.Clear()
+    Context 'On Windows' -Skip:(-not $IsWindows) {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
+
+        It 'changes the owner' {
+            GivenFile '001.txt' -OwnedBy 'Users'
+            WhenSettingOwner -WithArgs @{ Path = '001.txt' ; Identity = $script:currentUserName }
+            ThenOwner -Of '001.txt' -Is $script:currentUserName
+        }
+
+        It 'does not change owner' {
+            GivenFile '002.txt' -OwnedBy $script:currentUserName
+            Mock -CommandName 'Set-Acl' -ModuleName 'Carbon.FileSystem'
+            WhenSettingOwner -WithArgs @{ Path  = '002.txt' ; Identity = $script:currentUserName}
+            Should -Invoke 'Set-Acl' -ModuleName 'Carbon.FileSystem' -Times 0
+        }
+
+        It 'validates path exists' {
+            WhenSettingOwner -WithArgs @{ Path = '003.txt' ; Identity = $script:currentUserName } `
+                            -ErrorAction SilentlyContinue
+            $Global:Error | Should -Match 'does not exist'
+        }
+
+        It 'validates principal exists' {
+            GivenFile '004.txt' -OwnedBy 'Users'
+            WhenSettingOwner -WithArgs @{ Path = '004.txt' ; Identity = 'fjdskfsdaflklsdsfj' } -ErrorAction SilentlyContinue
+            $Global:Error | Select-Object -First 1 | Should -Match 'not found'
+        }
+
+        It 'accepts pipeline input' {
+            GivenFile '105.txt' -OwnedBy 'Users'
+            GivenFile '106.txt' -OwnedBy 'Users'
+            GivenFile '107.txt' -OwnedBy 'Users'
+
+            Get-ChildItem -Path $TestDrive -Filter '10*.txt' | Set-CNtfsOwner -Identity $script:currentUserName
+            ThenOwner -Of '105.txt' -Is $script:currentUserName
+            ThenOwner -Of '106.txt' -Is $script:currentUserName
+            ThenOwner -Of '107.txt' -Is $script:currentUserName
+        }
+
+        It 'supports WhatIf' {
+            GivenFile '008.txt' -OwnedBy 'Users'
+            WhenSettingOwner -WithArgs @{ Path = '008.txt'; Identity = $script:currentUserName; WhatIf = $true; }
+            ThenOwner -Of '008.txt' -Is 'Users'
+        }
+
+        It 'supports wildcards' {
+            GivenFile '209.txt' -OwnedBy 'Users'
+            GivenFile '210.txt' -OwnedBy 'Users'
+            WhenSettingOwner -WithArgs @{ Path = '2*.txt'; Identity = $script:currentUserName; }
+            ThenOwner -Of '209.txt' -Is $script:currentUserName
+            ThenOwner -Of '210.txt' -Is $script:currentUserName
+        }
     }
 
-    It 'changes the owner' {
-        GivenFile '001.txt' -OwnedBy 'Users'
-        WhenSettingOwner -WithArgs @{ Path = '001.txt' ; Identity = $script:currentUserName }
-        ThenOwner -Of '001.txt' -Is $script:currentUserName
-    }
+    Context 'On Linux and macOS' -Skip:$IsWindows {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
 
-    It 'does not change owner' {
-        GivenFile '002.txt' -OwnedBy $script:currentUserName
-        Mock -CommandName 'Set-Acl' -ModuleName 'Carbon.FileSystem'
-        WhenSettingOwner -WithArgs @{ Path  = '002.txt' ; Identity = $script:currentUserName}
-        Should -Invoke 'Set-Acl' -ModuleName 'Carbon.FileSystem' -Times 0
-    }
+        It 'fails' {
+            Set-CNtfsOwner -Path 'anyPath' -Identity 'anyIdentity' -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+            $Global:Error | Should -Match 'Set-CNtfsOwner function is only supported on Windows'
+        }
 
-    It 'validates path exists' {
-        WhenSettingOwner -WithArgs @{ Path = '003.txt' ; Identity = $script:currentUserName } `
-                         -ErrorAction SilentlyContinue
-        $Global:Error | Should -Match 'does not exist'
-    }
+        It 'fails once' {
+            Get-ChildItem -Path $PSScriptRoot | Set-CNtfsOwner -Identity 'anyIdentity' -ErrorAction SilentlyContinue |
+                Should -BeNullOrEmpty
+            $Global:Error | Should -HaveCount 1
+            $Global:Error | Should -Match 'only supported on Windows'
+        }
 
-    It 'validates principal exists' {
-        GivenFile '004.txt' -OwnedBy 'Users'
-        WhenSettingOwner -WithArgs @{ Path = '004.txt' ; Identity = 'fjdskfsdaflklsdsfj' } -ErrorAction SilentlyContinue
-        $Global:Error | Select-Object -First 1 | Should -Match 'not found'
-    }
-
-    It 'accepts pipeline input' {
-        GivenFile '105.txt' -OwnedBy 'Users'
-        GivenFile '106.txt' -OwnedBy 'Users'
-        GivenFile '107.txt' -OwnedBy 'Users'
-
-        Get-ChildItem -Path $TestDrive -Filter '10*.txt' | Set-CNtfsOwner -Identity $script:currentUserName
-        ThenOwner -Of '105.txt' -Is $script:currentUserName
-        ThenOwner -Of '106.txt' -Is $script:currentUserName
-        ThenOwner -Of '107.txt' -Is $script:currentUserName
-    }
-
-    It 'supports WhatIf' {
-        GivenFile '008.txt' -OwnedBy 'Users'
-        WhenSettingOwner -WithArgs @{ Path = '008.txt'; Identity = $script:currentUserName; WhatIf = $true; }
-        ThenOwner -Of '008.txt' -Is 'Users'
-    }
-
-    It 'supports wildcards' {
-        GivenFile '209.txt' -OwnedBy 'Users'
-        GivenFile '210.txt' -OwnedBy 'Users'
-        WhenSettingOwner -WithArgs @{ Path = '2*.txt'; Identity = $script:currentUserName; }
-        ThenOwner -Of '209.txt' -Is $script:currentUserName
-        ThenOwner -Of '210.txt' -Is $script:currentUserName
-    }
+        It 'can fail silently' {
+            Set-CNtfsOwner -Path 'anyPath' -Identity 'anyIdentity' -ErrorAction Ignore | Should -BeNullOrEmpty
+            $Global:Error | Should -BeNullOrEmpty
+        }
+     }
 }

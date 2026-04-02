@@ -6,8 +6,8 @@ function New-CTempDirectory
     Creates a new temporary directory with a random name.
 
     .DESCRIPTION
-    A new temporary directory is created in the current user's `env:TEMP` directory.  The directory's name is created
-    using the `Path` class's [GetRandomFileName
+    A new temporary directory is created in the current user's temp directory, as returned by
+    `[IO.Path]::GetTempPath()`.  The directory's name is created using the `Path` class's [GetRandomFileName
     method](http://msdn.microsoft.com/en-us/library/system.io.path.getrandomfilename.aspx).
 
     To add a custom prefix to the directory name, use the `Prefix` parameter. If you pass in a path, only its name will
@@ -41,6 +41,7 @@ function New-CTempDirectory
     Demonstrates how you can use `$PSCommandPath` in PowerShell 3+ to create a new, temporary directory, named after the
     currently executing scripts, e.g. `C:\Users\ajensen\AppData\Local\Temp\New-CTempDirectory.ps15pobd3tu.5rn`.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([IO.DirectoryInfo])]
     param(
@@ -59,6 +60,6 @@ function New-CTempDirectory
         $tempDir = '{0}{1}' -f $Prefix,$tempDir
     }
 
-    $tempDir = Join-Path -Path $env:TEMP -ChildPath $tempDir
-    New-Item -Path $tempDir -ItemType 'Directory' -Verbose:$VerbosePreference
+    $tempDir = Join-Path -Path (Get-CTempPath) -ChildPath $tempDir
+    Install-CDirectory -Path $tempDir -PassThru
 }

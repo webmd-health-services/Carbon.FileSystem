@@ -2,6 +2,15 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+BeforeDiscovery {
+    if (-not (Test-Path 'variable:IsWindows'))
+    {
+        $script:IsWindows = $true
+        $script:IsLinux = $false
+        $script:IsMacOS = $false
+    }
+}
+
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Test.ps1' -Resolve)
 
@@ -110,34 +119,52 @@ BeforeAll {
 }
 
 Describe 'Get-CNtfsHardLink' {
-    BeforeEach {
-        $script:testRoot = $null
-        $script:failed = $false
-        $script:testRoot = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
-        New-Item -Path $script:testRoot -ItemType 'Directory'
-        $Global:Error.Clear()
+    Context 'On Windows' -Skip:(-not $IsWindows) {
+        BeforeEach {
+            $script:testRoot = $null
+            $script:failed = $false
+            $script:testRoot = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
+            New-Item -Path $script:testRoot -ItemType 'Directory'
+            $Global:Error.Clear()
+        }
+
+        It "should create target file when it doesn't exist" {
+            $linkPath = 'link.txt'
+            GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
+            ThenFile 'testTarget.txt' -Exists
+            ThenFile 'link.txt' -Exists `
+                                -HasLinkType 'HardLink' `
+                                -Targets 'testTarget.txt'
+        }
+
+        It 'should retrieve hard link targets when there are multiple link paths' {
+            $linkPath = @()
+            $linkPath += 'link1.txt'
+            $linkPath += 'link2.txt'
+            GivenFile 'testTarget.txt'
+            GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
+            ThenFile 'link1.txt' -Exists `
+                                -HasLinkType 'HardLink' `
+                                -Targets 'testTarget.txt'
+            ThenFile 'link2.txt' -Exists `
+                                -HasLinkType 'HardLink' `
+                                -Targets 'testTarget.txt'
+        }
     }
 
-    It "should create target file when it doesn't exist" {
-        $linkPath = 'link.txt'
-        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
-        ThenFile 'testTarget.txt' -Exists
-        ThenFile 'link.txt' -Exists `
-                            -HasLinkType 'HardLink' `
-                            -Targets 'testTarget.txt'
-    }
+    Context 'On Linux and macOS' -Skip:($IsWindows) {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
 
-    It 'should retrieve hard link targets when there are multiple link paths' {
-        $linkPath = @()
-        $linkPath += 'link1.txt'
-        $linkPath += 'link2.txt'
-        GivenFile 'testTarget.txt'
-        GivenHardlink -LinkPath $linkPath -ThatTargets 'testTarget.txt'
-        ThenFile 'link1.txt' -Exists `
-                             -HasLinkType 'HardLink' `
-                             -Targets 'testTarget.txt'
-        ThenFile 'link2.txt' -Exists `
-                             -HasLinkType 'HardLink' `
-                             -Targets 'testTarget.txt'
+        It 'fails' {
+            Get-CNtfsHardLink -Path 'anyPath' -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+            $Global:Error | Should -Match 'Get-CNtfsHardLink function is only supported on Windows'
+        }
+
+        It 'can fail silently' {
+            Get-CNtfsHardLink -Path 'anyPath' -ErrorAction Ignore | Should -BeNullOrEmpty
+            $Global:Error | Should -BeNullOrEmpty
+        }
     }
 }

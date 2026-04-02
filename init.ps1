@@ -22,6 +22,11 @@ $InformationPreference = 'Continue'
 
 prism install | Format-Table
 
+if ((Test-Path -Path 'variable:IsWindows') -and -not $IsWindows)
+{
+    return
+}
+
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon' -Resolve) `
               -Function @('Install-CGroup', 'Install-CUser')
 

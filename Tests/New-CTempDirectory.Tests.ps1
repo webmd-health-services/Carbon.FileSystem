@@ -17,7 +17,7 @@ Describe 'New-CTempDirectory' {
         }
         finally
         {
-            Uninstall-CDirectory -Path $tmpDir -Recurse
+            Uninstall-CDirectory -Path $tmpDir.FullName -Recurse
         }
     }
 
@@ -30,7 +30,7 @@ Describe 'New-CTempDirectory' {
         }
         finally
         {
-            Uninstall-CDirectory -Path $tempDir -Recurse
+            Uninstall-CDirectory -Path $tempDir.FullName -Recurse
         }
     }
 
@@ -43,7 +43,12 @@ Describe 'New-CTempDirectory' {
         }
         finally
         {
-            Uninstall-CDirectory -Path $tempDir -Recurse
+            Uninstall-CDirectory -Path $tempDir.FullName -Recurse
         }
+    }
+
+    It 'supports WhatIf' {
+        $tempDir = New-CTempDirectory -WhatIf
+        $tempDir | Should -BeNullOrEmpty
     }
 }

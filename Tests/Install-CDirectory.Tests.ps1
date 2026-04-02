@@ -7,7 +7,7 @@ BeforeAll {
 
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem' -Resolve) -Verbose:$false
 
-    $script:root = [IO.Path]::GetTempPath()
+    $script:root = Get-CTempPath
 }
 
 Describe 'Install-CDirectory' {
