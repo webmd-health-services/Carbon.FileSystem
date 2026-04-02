@@ -4,7 +4,13 @@
 
 ## 1.2.0
 
-Adding `Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
+### Added
+
+`Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
+
+### Deprecated
+
+Import-Carbon.FileSystem.ps1. Use `Import-Module` instead.
 
 ## 1.1.2
 

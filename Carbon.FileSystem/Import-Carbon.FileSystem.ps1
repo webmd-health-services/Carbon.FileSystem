@@ -32,6 +32,10 @@ param(
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+$msg = 'Import-Carbon.FileSystem.ps1 is deprecated. Please use `Import-Module -Name ''Carbon.FileSystem'' instead. ' +
+       'This script will be removed in the next major version of Carbon.FileSystem.'
+Write-Warning -Message $msg
+
 $originalVerbosePref = $Global:VerbosePreference
 $originalWhatIfPref = $Global:WhatIfPreference
 
