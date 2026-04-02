@@ -82,9 +82,12 @@
         'Get-CNtfsHardLink',
         'Get-FileHardLink',
         'Grant-CNtfsPermission',
+        'Install-CDirectory',
+        'New-CTempDirectory',
         'Revoke-CNtfsPermission',
         'Set-CNtfsOwner',
-        'Test-CNtfsPermission'
+        'Test-CNtfsPermission',
+        'Uninstall-CDirectory'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

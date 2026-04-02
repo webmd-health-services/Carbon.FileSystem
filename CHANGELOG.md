@@ -6,7 +6,10 @@
 
 ### Added
 
-`Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
+* `Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
+* `Install-CDirectory` functon for creating directories. Migrated from Carbon.
+* `New-CTempDirectory` function for creating temp directories. Migrated from Carbon.
+* `Uninstall-CDirectory` function for removing directories. Migrated from Carbon.
 
 ### Deprecated
 
