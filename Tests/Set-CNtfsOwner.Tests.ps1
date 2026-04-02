@@ -10,7 +10,7 @@ BeforeAll {
                   -Function @('Set-CNtfsOwner') `
                   -Verbose:$false
 
-    $psModulesPath = Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem\Modules' -Resolve
+    $psModulesPath = Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem\M' -Resolve
 
     Import-Module -Name (Join-Path -Path $psModulesPath -ChildPath 'Carbon.Accounts' -Resolve) `
                   -Function @('Resolve-CPrincipal', 'Resolve-CPrincipalName') `
