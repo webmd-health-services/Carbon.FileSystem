@@ -4,20 +4,70 @@
 
 ## 1.2.0
 
+### Upgrade Instructions
+
+If upgrading from Carbon, inspect usages of `Install-CDirectory`, `Uninstall-CDirectory`, and `New-CTempDirectory`.
+
+* Inspect usages of `Install-CDirectory` for file paths. In Carbon, `Install-CDirectory` would ignore when the path to
+  install was to a file. Now, it will write an error. Update usages with the `-Force` switch to delete the file or
+  `-ErrorAction Ignore`
+* `Uninstall-CDirectory` no longer supports wildcard characters in paths. Updates usages with wildcard pathsto use
+  PowerShell's native cmdlets to convert wildcard paths into actual paths and pipe those into `Uninstall-CDirectory`,
+  e.g. `Get-Item -Path $paths | Uninstall-CDirectory`.
+* Inspect usages of `Uninstall-CDirectory` for file paths. In Carbon, `Uninstall-CDirectory` would ignore file
+  paths. Now, it will write an error. To force it to delete files, too, use the new `-Force` switch. To ignore when it
+  tries to delete files, use `-ErrorAction Ignore` .
+
 ### Added
 
 * `Set-CNtfsOwner` function for setting the owner of an NTFS file or directory.
 * `Install-CDirectory` functon for creating directories. Migrated from Carbon.
 * `New-CTempDirectory` function for creating temp directories. Migrated from Carbon.
 * `Uninstall-CDirectory` function for removing directories. Migrated from Carbon.
-* `-PassThru` switch to `Install-CDirectory` to return an `[IO.DirectoryInfo]` object for the directory.
-* Linux and macOS support to `Install-CDirectory`, `New-CTempDirectory`, and `Uninstall-CDirectory`.
 * `Get-CTempPath` function for getting the current user's temp path.
 * `Set-CTempPath` function for setting the current user's temp path.
+
+If you're migrating from Carbon, this functionality was added:
+
+`Install-CDirectory`:
+
+* `-PassThru` switch to return an `[IO.DirectoryInfo]` object for the directory
+* `-Force` switch to replace an existing file with a directory
+* Linux and macOS support
+* accept paths from the pipeline
+* `-WhatIf` support
+
+`Uninstall-CDirectory`:
+
+* `-Force` switch to force it to delete a file
+* Linux and macOS support
+* accept directory objects and paths from the pipeline
+* `-WhatIf` support
+
+`New-CTempDirectory`:
+
+* Linux and macOS support
+
+### Changed
+
+If migrating from Carbon, this functionality was changed:
+
+* `Install-CDirectory` now writes an error if the path is to a file. Use the `-Force` switch to replace the file with a
+  directory.
+* `Uninstall-CDirectory` no longer supports wildcard patterns. Use PowerShell's native cmdlets to convert any paths with
+  wildcards to actual paths and pipe those to `Uninstall-CDirectory`, e.g.
+  `Get-Item -Path $paths | Uninstall-CDirectory`.
 
 ### Deprecated
 
 Import-Carbon.FileSystem.ps1. Use `Import-Module` instead.
+
+### Fixed
+
+If migrating from Carbon, this functionalty was fixed:
+
+* `Install-CDirectory` would fail to create a directory if the path contained wildcard characters that would match the
+  path of an existing file or directory. Wildcard patterns in paths are no longer supported.
 
 ## 1.1.2
 
