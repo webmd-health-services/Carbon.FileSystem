@@ -13,6 +13,7 @@
 * `-PassThru` switch to `Install-CDirectory` to return an `[IO.DirectoryInfo]` object for the directory.
 * Linux and macOS support to `Install-CDirectory`, `New-CTempDirectory`, and `Uninstall-CDirectory`.
 * `Get-CTempPath` function for getting the current user's temp path.
+* `Set-CTempPath` function for setting the current user's temp path.
 
 ### Deprecated
 

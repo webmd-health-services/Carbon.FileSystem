@@ -87,6 +87,7 @@
         'New-CTempDirectory',
         'Revoke-CNtfsPermission',
         'Set-CNtfsOwner',
+        'Set-CTempPath',
         'Test-CNtfsPermission',
         'Uninstall-CDirectory'
     )
