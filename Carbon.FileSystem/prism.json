@@ -8,5 +8,6 @@
       "Name": "Carbon.Security",
       "Version": "1.*"
     }
-  ]
+  ],
+  "PSModulesDirectoryName": "M"
 }

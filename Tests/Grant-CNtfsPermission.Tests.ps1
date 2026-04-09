@@ -4,6 +4,15 @@ using namespace System.Security.AccessControl;
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+BeforeDiscovery {
+    if (-not (Test-Path 'variable:IsWindows'))
+    {
+        $script:IsWindows = $true
+        $script:IsLinux = $false
+        $script:IsMacOS = $false
+    }
+}
+
 BeforeAll {
     Set-StrictMode -Version 'Latest'
 
@@ -162,285 +171,309 @@ BeforeAll {
 }
 
 Describe 'Grant-CNtfsPermission' {
-    BeforeEach {
-        $Global:Error.Clear()
-        $script:testDirPath = Join-Path -Path $TestDrive -ChildPath $script:testNum
-        New-Item -Path $script:testDirPath -ItemType 'Directory'
-    }
-
-    AfterEach {
-        $script:testNum += 1
-    }
-
-    It 'grants permissions on files' {
-        $file = New-TestFile
-        $identity = 'BUILTIN\Administrators'
-        $permissions = 'Read','Write'
-        $warnings = @()
-
-        Invoke-GrantPermissions -Identity $identity `
-                                -Permissions $permissions `
-                                -Path $file `
-                                -InheritanceFlag 'None' `
-                                -PropagationFlag 'None' `
-                                -WarningVariable 'warnings'
-        $warnings | Should -BeNullOrEmpty
-    }
-
-    It 'grants permissions on directories' {
-        $dir = New-TestDirectory
-        $identity = 'BUILTIN\Administrators'
-        $permissions = 'Read','Write'
-
-        Invoke-GrantPermissions -Identity $identity `
-                                -Permissions $permissions `
-                                -Path $dir `
-                                -InheritanceFlag ('ContainerInherit', 'ObjectInherit') `
-                                -PropagationFlag 'None'
-    }
-
-    It 'clears existing permissions' {
-        $script:path = New-TestFile
-        Invoke-GrantPermissions $script:user 'FullControl' -Path $script:path -InheritanceFlag None -PropagationFlag None
-        Invoke-GrantPermissions $script:user2 'FullControl' -Path $script:path -InheritanceFlag None -PropagationFlag None
-
-        $result =
-            Grant-CNtfsPermission -Identity 'Everyone' -Permission 'Read','Write' -Path $script:path -Clear -PassThru
-        $result | Should -Not -BeNullOrEmpty
-        $result.Path | Should -Be $script:path
-
-        $acl = Get-Acl -Path $script:path
-
-        $rules = $acl.Access | Where-Object { -not $_.IsInherited }
-        $rules | Should -Not -BeNullOrEmpty
-        $rules.IdentityReference.Value | Should -Be 'Everyone'
-    }
-
-    It 'handles no permissions to clear' {
-        $script:path = New-TestFile
-
-        $acl = Get-Acl -Path $script:path
-        $rules = $acl.Access | Where-Object { -not $_.IsInherited }
-        if( $rules )
-        {
-            $rules | ForEach-Object { $acl.RemoveAccessRule( $_ ) }
-            Set-Acl -Path $script:path -AclObject $acl
+    Context 'On Windows' -Skip:(-not $IsWindows) {
+        BeforeEach {
+            $Global:Error.Clear()
+            $script:testDirPath = Join-Path -Path $TestDrive -ChildPath $script:testNum
+            New-Item -Path $script:testDirPath -ItemType 'Directory'
         }
 
-        $result = Grant-CNtfsPermission -Identity 'Everyone' `
-                                        -Permission 'Read','Write' `
-                                        -Path $script:path `
-                                        -Clear `
-                                        -PassThru `
-                                        -ErrorAction SilentlyContinue
-        $result | Should -Not -BeNullOrEmpty
-        $result.IdentityReference | Should -Be 'Everyone'
-
-        $error.Count | Should -Be 0
-
-        $acl = Get-Acl -Path $script:path
-        $rules = $acl.Access | Where-Object { -not $_.IsInherited }
-        $rules | Should -Not -BeNullOrEmpty
-        ($rules.IdentityReference.Value -like 'Everyone') | Should -BeTrue
-    }
-
-    # Applied manually in the Windows Explorer UI to determine corresponding inheritance and propagation flags.
-    $testCases = @(
-        @{
-            ApplyTo = 'FolderSubfoldersAndFiles';
-            InheritanceFlags = 'ContainerInherit,ObjectInherit';
-            PropagationFlags = 'None';
-        },
-        @{
-            ApplyTo = 'FolderOnly';
-            InheritanceFlags = 'None';
-            PropagationFlags = 'None';
-        },
-        @{
-            ApplyTo = 'FolderAndSubfolders';
-            InheritanceFlags = 'ContainerInherit';
-            PropagationFlags = 'None';
-        },
-        @{
-            ApplyTo = 'FolderAndFiles';
-            InheritanceFlags = 'ObjectInherit';
-            PropagationFlags = 'None';
-        },
-        @{
-            ApplyTo = 'SubfoldersAndFilesOnly';
-            InheritanceFlags = 'ContainerInherit,ObjectInherit';
-            PropagationFlags = 'InheritOnly';
-        },
-        @{
-            ApplyTo = 'SubfoldersOnly';
-            InheritanceFlags = 'ContainerInherit';
-            PropagationFlags = 'InheritOnly';
+        AfterEach {
+            $script:testNum += 1
         }
-    )
 
+        It 'grants permissions on files' {
+            $file = New-TestFile
+            $identity = 'BUILTIN\Administrators'
+            $permissions = 'Read','Write'
+            $warnings = @()
 
-    It 'applies to <ApplyTo>' -TestCases $testCases {
-        $script:containerPath = New-TestDirectory
-        Invoke-GrantPermissions -Identity $script:user `
-                                -Path $script:containerPath `
-                                -Permission Read `
-                                -ApplyTo $ApplyTo `
-                                -InheritanceFlag $InheritanceFlags `
-                                -PropagationFlag $PropagationFlags
-    }
-
-    $testCases = @(
-        @{
-            ApplyTo = 'FolderSubfoldersAndFiles';
-            InheritanceFlags = 'ContainerInherit,ObjectInherit';
-            PropagationFlags = 'NoPropagateInherit';
-        },
-        @{
-            # Not allowed by UI.
-            ApplyTo = 'FolderOnly';
-            InheritanceFlags = 'None';
-            PropagationFlags = 'None';
-        },
-        @{
-            ApplyTo = 'FolderAndSubfolders';
-            InheritanceFlags = 'ContainerInherit';
-            PropagationFlags = 'NoPropagateInherit';
-        },
-        @{
-            ApplyTo = 'FolderAndFiles';
-            InheritanceFlags = 'ObjectInherit';
-            PropagationFlags = 'NoPropagateInherit';
-        },
-        @{
-            ApplyTo = 'SubfoldersAndFilesOnly';
-            InheritanceFlags = 'ContainerInherit,ObjectInherit';
-            PropagationFlags = 'NoPropagateInherit,InheritOnly';
-        },
-        @{
-            ApplyTo = 'SubfoldersOnly';
-            InheritanceFlags = 'ContainerInherit';
-            PropagationFlags = 'NoPropagateInherit,InheritOnly';
-        },
-        @{
-            ApplyTo = 'FilesOnly';
-            InheritanceFlags = 'ObjectInherit';
-            PropagationFlags = 'NoPropagateInherit,InheritOnly';
+            Invoke-GrantPermissions -Identity $identity `
+                                    -Permissions $permissions `
+                                    -Path $file `
+                                    -InheritanceFlag 'None' `
+                                    -PropagationFlag 'None' `
+                                    -WarningVariable 'warnings'
+            $warnings | Should -BeNullOrEmpty
         }
-    )
 
-    It 'applies to <ApplyTo> and only child files/folders' -TestCases $testCases {
-        $script:containerPath = New-TestDirectory
-        Invoke-GrantPermissions -Identity $script:user `
-                                -Path $script:containerPath `
-                                -Permission Read `
-                                -ApplyTo $ApplyTo `
-                                -OnlyApplyToChildFilesAndFolders `
-                                -InheritanceFlag $InheritanceFlags `
-                                -PropagationFlag $PropagationFlags
-    }
+        It 'grants permissions on directories' {
+            $dir = New-TestDirectory
+            $identity = 'BUILTIN\Administrators'
+            $permissions = 'Read','Write'
 
-    It 'updates existing permission' {
-        $script:containerPath = New-TestDirectory
-        Invoke-GrantPermissions -Identity $script:user `
+            Invoke-GrantPermissions -Identity $identity `
+                                    -Permissions $permissions `
+                                    -Path $dir `
+                                    -InheritanceFlag ('ContainerInherit', 'ObjectInherit') `
+                                    -PropagationFlag 'None'
+        }
+
+        It 'clears existing permissions' {
+            $script:path = New-TestFile
+            Invoke-GrantPermissions $script:user 'FullControl' -Path $script:path -InheritanceFlag None -PropagationFlag None
+            Invoke-GrantPermissions $script:user2 'FullControl' -Path $script:path -InheritanceFlag None -PropagationFlag None
+
+            $result =
+                Grant-CNtfsPermission -Identity 'Everyone' -Permission 'Read','Write' -Path $script:path -Clear -PassThru
+            $result | Should -Not -BeNullOrEmpty
+            $result.Path | Should -Be $script:path
+
+            $acl = Get-Acl -Path $script:path
+
+            $rules = $acl.Access | Where-Object { -not $_.IsInherited }
+            $rules | Should -Not -BeNullOrEmpty
+            $rules.IdentityReference.Value | Should -Be 'Everyone'
+        }
+
+        It 'handles no permissions to clear' {
+            $script:path = New-TestFile
+
+            $acl = Get-Acl -Path $script:path
+            $rules = $acl.Access | Where-Object { -not $_.IsInherited }
+            if( $rules )
+            {
+                $rules | ForEach-Object { $acl.RemoveAccessRule( $_ ) }
+                Set-Acl -Path $script:path -AclObject $acl
+            }
+
+            $result = Grant-CNtfsPermission -Identity 'Everyone' `
+                                            -Permission 'Read','Write' `
+                                            -Path $script:path `
+                                            -Clear `
+                                            -PassThru `
+                                            -ErrorAction SilentlyContinue
+            $result | Should -Not -BeNullOrEmpty
+            $result.IdentityReference | Should -Be 'Everyone'
+
+            $error.Count | Should -Be 0
+
+            $acl = Get-Acl -Path $script:path
+            $rules = $acl.Access | Where-Object { -not $_.IsInherited }
+            $rules | Should -Not -BeNullOrEmpty
+            ($rules.IdentityReference.Value -like 'Everyone') | Should -BeTrue
+        }
+
+        # Applied manually in the Windows Explorer UI to determine corresponding inheritance and propagation flags.
+        $testCases = @(
+            @{
+                ApplyTo = 'FolderSubfoldersAndFiles';
+                InheritanceFlags = 'ContainerInherit,ObjectInherit';
+                PropagationFlags = 'None';
+            },
+            @{
+                ApplyTo = 'FolderOnly';
+                InheritanceFlags = 'None';
+                PropagationFlags = 'None';
+            },
+            @{
+                ApplyTo = 'FolderAndSubfolders';
+                InheritanceFlags = 'ContainerInherit';
+                PropagationFlags = 'None';
+            },
+            @{
+                ApplyTo = 'FolderAndFiles';
+                InheritanceFlags = 'ObjectInherit';
+                PropagationFlags = 'None';
+            },
+            @{
+                ApplyTo = 'SubfoldersAndFilesOnly';
+                InheritanceFlags = 'ContainerInherit,ObjectInherit';
+                PropagationFlags = 'InheritOnly';
+            },
+            @{
+                ApplyTo = 'SubfoldersOnly';
+                InheritanceFlags = 'ContainerInherit';
+                PropagationFlags = 'InheritOnly';
+            }
+        )
+
+
+        It 'applies to <ApplyTo>' -TestCases $testCases {
+            $script:containerPath = New-TestDirectory
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Path $script:containerPath `
+                                    -Permission Read `
+                                    -ApplyTo $ApplyTo `
+                                    -InheritanceFlag $InheritanceFlags `
+                                    -PropagationFlag $PropagationFlags
+        }
+
+        $testCases = @(
+            @{
+                ApplyTo = 'FolderSubfoldersAndFiles';
+                InheritanceFlags = 'ContainerInherit,ObjectInherit';
+                PropagationFlags = 'NoPropagateInherit';
+            },
+            @{
+                # Not allowed by UI.
+                ApplyTo = 'FolderOnly';
+                InheritanceFlags = 'None';
+                PropagationFlags = 'None';
+            },
+            @{
+                ApplyTo = 'FolderAndSubfolders';
+                InheritanceFlags = 'ContainerInherit';
+                PropagationFlags = 'NoPropagateInherit';
+            },
+            @{
+                ApplyTo = 'FolderAndFiles';
+                InheritanceFlags = 'ObjectInherit';
+                PropagationFlags = 'NoPropagateInherit';
+            },
+            @{
+                ApplyTo = 'SubfoldersAndFilesOnly';
+                InheritanceFlags = 'ContainerInherit,ObjectInherit';
+                PropagationFlags = 'NoPropagateInherit,InheritOnly';
+            },
+            @{
+                ApplyTo = 'SubfoldersOnly';
+                InheritanceFlags = 'ContainerInherit';
+                PropagationFlags = 'NoPropagateInherit,InheritOnly';
+            },
+            @{
+                ApplyTo = 'FilesOnly';
+                InheritanceFlags = 'ObjectInherit';
+                PropagationFlags = 'NoPropagateInherit,InheritOnly';
+            }
+        )
+
+        It 'applies to <ApplyTo> and only child files/folders' -TestCases $testCases {
+            $script:containerPath = New-TestDirectory
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Path $script:containerPath `
+                                    -Permission Read `
+                                    -ApplyTo $ApplyTo `
+                                    -OnlyApplyToChildFilesAndFolders `
+                                    -InheritanceFlag $InheritanceFlags `
+                                    -PropagationFlag $PropagationFlags
+        }
+
+        It 'updates existing permission' {
+            $script:containerPath = New-TestDirectory
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Permission FullControl `
+                                    -Path $script:containerPath `
+                                    -ApplyTo FolderOnly `
+                                    -InheritanceFlag None `
+                                    -PropagationFlag None
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Permission Read `
+                                    -Path $script:containerPath `
+                                    -Apply FolderSubfoldersAndFiles `
+                                    -InheritanceFlag 'ContainerInherit,ObjectInherit' `
+                                    -PropagationFlag None
+        }
+
+        It 'does nothing when permission exists' {
+            $script:containerPath = New-TestDirectory
+
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Permission FullControl `
+                                    -Path $script:containerPath
+
+            Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon'
+
+            Invoke-GrantPermissions -Identity $script:user -Permission FullControl -Path $script:containerPath
+            Assert-MockCalled -CommandName 'Set-Acl' -Times 0 -ModuleName 'Carbon'
+        }
+
+        It 'updates existing permissions when forced' {
+            $script:containerPath = New-TestDirectory
+
+            Invoke-GrantPermissions -Identity $script:user `
+                                    -Permission FullControl `
+                                    -Path $script:containerPath `
+                                    -ApplyTo FolderAndFiles
+
+            Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon.Security'
+
+            Grant-CNtfsPermission -Identity $script:user `
                                 -Permission FullControl `
                                 -Path $script:containerPath `
-                                -ApplyTo FolderOnly `
-                                -InheritanceFlag None `
-                                -PropagationFlag None
-        Invoke-GrantPermissions -Identity $script:user `
-                                -Permission Read `
-                                -Path $script:containerPath `
-                                -Apply FolderSubfoldersAndFiles `
-                                -InheritanceFlag 'ContainerInherit,ObjectInherit' `
-                                -PropagationFlag None
+                                -Apply FolderAndFiles `
+                                -Force
+
+            Should -Invoke 'Set-Acl' -Times 1 -Exactly -ModuleName 'Carbon.Security'
+        }
+
+        It 'sets permissions on hidden items' {
+            $script:path = New-TestFile
+            $item = Get-Item -Path $script:path
+            $item.Attributes = $item.Attributes -bor [IO.FileAttributes]::Hidden
+
+            Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
+            $Global:Error.Count | Should -Be 0
+        }
+
+        It 'fails if the path does not exist' {
+            $result = Grant-CNtfsPermission -Identity $script:user `
+                                            -Permission Read `
+                                            -Path 'C:\I\Do\Not\Exist' `
+                                            -PassThru `
+                                            -ErrorAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $Global:Error.Count | Should -BeGreaterThan 0
+            $Global:Error[0] | Should -Match 'that path does not exist'
+        }
+
+        It 'clears permissions on files' {
+            $script:path = New-TestFile
+            Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
+            Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path -Clear
+            $Global:Error | Should -BeNullOrEmpty
+        }
+
+        It 'clears permissions on directories' {
+            $script:containerPath = New-TestDirectory
+
+            Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:containerPath
+            Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:containerPath -Clear
+
+            $Global:Error | Should -BeNullOrEmpty
+        }
+
+        It 'sets Deny rules' {
+            $filePath = New-TestFile
+            Invoke-GrantPermissions -Identity $script:user -Permissions 'Write' -Path $filePath -Type 'Deny'
+        }
+
+        It 'grant multiple permissions to an user/group' {
+            $dirPath = New-TestDirectory
+            Grant-CNtfsPermission -Path $dirPath `
+                                -Identity $script:user `
+                                -Permission 'Read' `
+                                -ApplyTo FolderSubfoldersAndFiles `
+                                -Append
+            Grant-CNtfsPermission -Path $dirPath `
+                                -Identity $script:user `
+                                -Permission 'Write' `
+                                -ApplyTo FolderAndFiles `
+                                -Append
+            $perm = Get-CNtfsPermission -Path $dirPath -Identity $script:user
+            $perm | Should -HaveCount 2
+        }
     }
 
-    It 'does nothing when permission exists' {
-        $script:containerPath = New-TestDirectory
+    Context 'On Linux and macOS' -Skip:$IsWindows {
+        BeforeEach {
+            $Global:Error.Clear()
+        }
 
-        Invoke-GrantPermissions -Identity $script:user `
-                                -Permission FullControl `
-                                -Path $script:containerPath
+        It 'fails' {
+            Grant-CNtfsPermission -Identity 'anyIdentity' `
+                                  -Permission Read `
+                                  -Path 'anyPath' `
+                                  -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+            $Global:Error | Should -Match 'Grant-CNtfsPermission function is only supported on Windows'
+        }
 
-        Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon'
-
-        Invoke-GrantPermissions -Identity $script:user -Permission FullControl -Path $script:containerPath
-        Assert-MockCalled -CommandName 'Set-Acl' -Times 0 -ModuleName 'Carbon'
-    }
-
-    It 'updates existing permissions when forced' {
-        $script:containerPath = New-TestDirectory
-
-        Invoke-GrantPermissions -Identity $script:user `
-                                -Permission FullControl `
-                                -Path $script:containerPath `
-                                -ApplyTo FolderAndFiles
-
-        Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon.Security'
-
-        Grant-CNtfsPermission -Identity $script:user `
-                              -Permission FullControl `
-                              -Path $script:containerPath `
-                              -Apply FolderAndFiles `
-                              -Force
-
-        Should -Invoke 'Set-Acl' -Times 1 -Exactly -ModuleName 'Carbon.Security'
-    }
-
-    It 'sets permissions on hidden items' {
-        $script:path = New-TestFile
-        $item = Get-Item -Path $script:path
-        $item.Attributes = $item.Attributes -bor [IO.FileAttributes]::Hidden
-
-        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
-        $Global:Error.Count | Should -Be 0
-    }
-
-    It 'fails if the path does not exist' {
-        $result = Grant-CNtfsPermission -Identity $script:user `
-                                        -Permission Read `
-                                        -Path 'C:\I\Do\Not\Exist' `
-                                        -PassThru `
-                                        -ErrorAction SilentlyContinue
-        $result | Should -BeNullOrEmpty
-        $Global:Error.Count | Should -BeGreaterThan 0
-        $Global:Error[0] | Should -Match 'that path does not exist'
-    }
-
-    It 'clears permissions on files' {
-        $script:path = New-TestFile
-        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path
-        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:path -Clear
-        $Global:Error | Should -BeNullOrEmpty
-    }
-
-    It 'clears permissions on directories' {
-        $script:containerPath = New-TestDirectory
-
-        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:containerPath
-        Invoke-GrantPermissions -Identity $script:user -Permission Read -Path $script:containerPath -Clear
-
-        $Global:Error | Should -BeNullOrEmpty
-    }
-
-    It 'sets Deny rules' {
-        $filePath = New-TestFile
-        Invoke-GrantPermissions -Identity $script:user -Permissions 'Write' -Path $filePath -Type 'Deny'
-    }
-
-    It 'grant multiple permissions to an user/group' {
-        $dirPath = New-TestDirectory
-        Grant-CNtfsPermission -Path $dirPath `
-                              -Identity $script:user `
-                              -Permission 'Read' `
-                              -ApplyTo FolderSubfoldersAndFiles `
-                              -Append
-        Grant-CNtfsPermission -Path $dirPath `
-                              -Identity $script:user `
-                              -Permission 'Write' `
-                              -ApplyTo FolderAndFiles `
-                              -Append
-        $perm = Get-CNtfsPermission -Path $dirPath -Identity $script:user
-        $perm | Should -HaveCount 2
+        It 'can fail silently' {
+            Grant-CNtfsPermission -Identity 'anyIdentity' `
+                                  -Permission Read `
+                                  -Path 'anyPath' `
+                                  -ErrorAction Ignore | Should -BeNullOrEmpty
+            $Global:Error | Should -BeNullOrEmpty
+        }
     }
 }

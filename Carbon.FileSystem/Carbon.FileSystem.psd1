@@ -78,13 +78,18 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
+        'Get-CTempPath',
         'Get-CNtfsPermission',
         'Get-CNtfsHardLink',
         'Get-FileHardLink',
         'Grant-CNtfsPermission',
+        'Install-CDirectory',
+        'New-CTempDirectory',
         'Revoke-CNtfsPermission',
         'Set-CNtfsOwner',
-        'Test-CNtfsPermission'
+        'Set-CTempPath',
+        'Test-CNtfsPermission',
+        'Uninstall-CDirectory'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

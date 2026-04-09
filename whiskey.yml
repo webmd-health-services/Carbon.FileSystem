@@ -8,39 +8,34 @@ Build:
     IncrementPrereleaseVersion: true
 
 # Update the AppVeyor build/version number.
-- Exec:
-      OnlyBy: BuildServer
-      Path: appveyor
-      Argument: [ UpdateBuild, -Version, "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)" ]
+- Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
+  .OnlyBy: BuildServer
 
-- PowerShell:
-    ExceptDuring: Clean
-    Path: init.ps1
+- PowerShell: .\init.ps1
+  .ExceptDuring: Clean
 
-- PowerShell:
-    ExceptDuring: Clean
-    WorkingDirectory: Carbon.FileSystem
-    ScriptBlock: prism install | Format-Table
+- PowerShell: prism install | Format-Table
+  .ExceptDuring: Clean
+  .WorkingDirectory: Carbon.FileSystem
 
 # Dot-sourcing files is expensive. Move all functions into .psm1 file to improve import speed. Do this before testing
 # to ensure the module still works.
 - MergeFile:
-    OnlyBy: BuildServer
-    # Builds run twice on some serves. Only run this step if the module hasn't been merged yet.
-    IfExists: Carbon.FileSystem\Functions\*.ps1
+    .OnlyBy: BuildServer
+    # Builds run twice on some servers. Only run this step if the module hasn't been merged yet.
+    .IfExists: Carbon.FileSystem\Functions\*.ps1
     Path:
     - Carbon.FileSystem\Functions\*.ps1
     DestinationPath: Carbon.FileSystem\Carbon.FileSystem.psm1
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
 
-- PowerShell:
-    OnlyDuring: Clean
-    Path: reset.ps1
+- PowerShell: .\reset.ps1
+  .OnlyDuring: Clean
 
 # Build runs twice on some servers, so delete any ZIP file created by another build.
 - Delete:
-    Path: .output\*.zip
+    Path: $(WHISKEY_OUTPUT_DIRECTORY)\*.zip
 
 - CopyFile:
     Path:
@@ -51,31 +46,21 @@ Build:
     DestinationDirectory: Carbon.FileSystem
 
 - Zip:
-    ArchivePath: .output\Carbon.FileSystem-$(WHISKEY_SEMVER2).zip
+    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\Carbon.FileSystem-$(WHISKEY_SEMVER2).zip
     Path:
     - Carbon.FileSystem
     Exclude:
     - "*.pdb"
     - "*.orig"
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [ 'PushArtifact', '.output/Carbon.FileSystem-$(WHISKEY_SEMVER2).zip', '-DeploymentName', 'GitHub' ]
-
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/Carbon.FileSystem-$(WHISKEY_SEMVER2).zip' -DeploymentName 'GitHub'
+  .OnlyBy: BuildServer
 
 - PublishPowerShellModule:
     Path: Carbon.FileSystem
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '.output/Carbon.FileSystem.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/Carbon.FileSystem.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
+  .OnlyBy: BuildServer
 
 - Pester:
     Configuration:

@@ -126,6 +126,13 @@ function Grant-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    if (-not $IsWindows)
+    {
+        $msg = 'The Grant-CNtfsPermission function is only supported on Windows.'
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
     if (-not $ApplyTo -and (Test-Path -Path $Path -PathType Container))
     {
         $ApplyTo = 'FolderSubfoldersAndFiles'

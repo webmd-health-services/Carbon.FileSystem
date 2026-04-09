@@ -94,6 +94,13 @@ function Test-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    if (-not $IsWindows)
+    {
+        $msg = 'The Test-CNtfsPermission function is only supported on Windows.'
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
     if ($PSCmdlet.ParameterSetName -eq 'TestAppliesToFlags')
     {
         if ($ApplyTo)

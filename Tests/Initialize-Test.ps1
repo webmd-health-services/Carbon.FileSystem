@@ -55,7 +55,7 @@ try
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon' -Resolve) `
                   -Function @('Install-CDirectory')
 
-    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon.Accounts' -Resolve) `
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.FileSystem\M\Carbon.Accounts' -Resolve) `
                   -Function @('Resolve-CPrincipalName')
 }
 finally

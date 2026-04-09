@@ -12,30 +12,57 @@ test: false
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: PowerShell 7.2 on Windows
+  # Windows
+  # https://www.appveyor.com/docs/windows-images-software/
+  # We don't use Windows Server 2012 R2 because PackageManagement and PowerShellGet no longer work on that OS.
+  - job_name: Windows PowerShell 5.1 on Windows Server 2016
+    job_group: ps
+    appveyor_build_worker_image: Visual Studio 2017
+
+  - job_name: Windows PowerShell 5.1 on Windows Server 2019
+    job_group: ps
+    appveyor_build_worker_image: Visual Studio 2022
+
+  # PowerShell 7 on Windows only available on Windows Server 2019 build image
+  - job_name: PowerShell 7 on Windows Server 2019
     job_group: pwsh
     appveyor_build_worker_image: Visual Studio 2022
 
-  - job_name: Windows PowerShell 5.1/.NET 4.6.2
-    job_group: ps
-    appveyor_build_worker_image: Visual Studio 2013
-
-  - job_name: Windows PowerShell 5.1/.NET 4.8
-    job_group: ps
-    appveyor_build_worker_image: Visual Studio 2019
-
-  - job_name: PowerShell 6.2 on Windows
+  # PowerShell 6 on Windows only available on Windows Server 2016 build image
+  - job_name: PowerShell 6 on Windows Server 2016
     job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2015
+    appveyor_build_worker_image: Visual Studio 2017
 
-  - job_name: PowerShell 7.1 on Windows
+  # Linux
+  # https://www.appveyor.com/docs/linux-images-software/
+  - job_name: PowerShell 7 on Ubuntu 18 "Bionic Beaver"
     job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2019
+    appveyor_build_worker_image: Ubuntu
 
+  - job_name: PowerShell 7 on Ubuntu 20 "Focal Fossa"
+    job_group: pwsh
+    appveyor_build_worker_image: Ubuntu2004
+
+  - job_name: PowerShell 7 on Ubuntu 22 "Jammy Jellyfish"
+    job_group: pwsh
+    appveyor_build_worker_image: Ubuntu2204
+
+  # macOS
+  # https://www.appveyor.com/docs/macos-images-software/
+  - job_name: PowerShell 7 on macOS 12 "Monterey"
+    job_group: pwsh
+    appveyor_build_worker_image: macos-monterey
+
+  - job_name: PowerShell 7 on macOS 13 "Ventura"
+    job_group: pwsh
+    appveyor_build_worker_image: macos-ventura
+
+  - job_name: PowerShell 7 on macOS 14 "Sonoma"
+    job_group: pwsh
+    appveyor_build_worker_image: macos-sonoma
 
 artifacts:
 - path: .output\*
-
 
 for:
 # Build in Windows PowerShell
@@ -43,17 +70,26 @@ for:
     only:
     - job_group: ps
   build_script:
-  - ps: |
+  - ps: &build_script |
       $ProgressPreference = 'SilentlyContinue'
       iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
-      .\build.ps1
+      $failed = $true
+      try
+      {
+        .\build.ps1
+        $failed = $false
+      }
+      finally
+      {
+        if ($failed)
+        {
+          $Global:Error | Format-List * -Force
+        }
+      }
 
 # Build in PowerShell
 - matrix:
     only:
     - job_group: pwsh
   build_script:
-  - pwsh: |
-      $ProgressPreference = 'SilentlyContinue'
-      iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
-      ./build.ps1
+  - pwsh: *build_script

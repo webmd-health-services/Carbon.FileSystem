@@ -40,5 +40,12 @@ function Revoke-CNtfsPermission
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    if (-not $IsWindows)
+    {
+        $msg = 'The Revoke-CNtfsPermission function is only supported on Windows.'
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
     Revoke-CPermission @PSBoundParameters
 }
