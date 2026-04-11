@@ -72,13 +72,13 @@ param(
 )
 
 #Requires -Version 5.1
-$ErrorActionPreference = 'Stop'
-
 Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$InformationPreference = 'Continue'
 
 # Set to a specific version to use a specific version of Whiskey.
 $whiskeyVersion = '0.*'
-$allowPrerelease = $false
+$allowPrerelease = $true
 
 $psModulesRoot = Join-Path -Path $PSScriptRoot -ChildPath 'PSModules'
 $whiskeyModuleRoot = Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Whiskey'
@@ -207,5 +207,12 @@ if ($PipelineName)
     $optionalArgs['PipelineName'] = $PipelineName
 }
 
+$whiskeyModule = Get-Module -Name 'Whiskey'
+$whiskeyVersion = $whiskeyModule.Version.ToString()
+if (($whiskeyModule | Get-Member -Name 'Prerelease') -and $whiskeyModule.Prerelease)
+{
+    $whiskeyVersion += "-$($whiskeyModule.Prerelease)"
+}
+Write-Information "Whiskey v${whiskeyVersion}"
 $context = New-WhiskeyContext -Environment 'Dev' -ConfigurationPath $ConfigurationPath
 Invoke-WhiskeyBuild -Context $context @optionalArgs

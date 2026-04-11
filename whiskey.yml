@@ -1,9 +1,15 @@
 
 Build:
+- PowerShell: gci 'env:'
+  .OnlyBy: BuildServer
+
 - Version:
+    .Verbose: true
+    .Debug: true
     Path: Carbon.FileSystem\Carbon.FileSystem.psd1
     Prerelease:
     - main: ""
+    - bugfix/version-has-prerelease-on-linux: ""
     - "*": rc$(WHISKEY_BUILD_NUMBER)
     IncrementPrereleaseVersion: true
 
