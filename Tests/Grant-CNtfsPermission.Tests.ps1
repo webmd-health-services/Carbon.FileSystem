@@ -372,10 +372,10 @@ Describe 'Grant-CNtfsPermission' {
                                     -Permission FullControl `
                                     -Path $script:containerPath
 
-            Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon'
+            Mock -CommandName 'Set-CAcl' -ModuleName 'Carbon.Security'
 
             Invoke-GrantPermissions -Identity $script:user -Permission FullControl -Path $script:containerPath
-            Assert-MockCalled -CommandName 'Set-Acl' -Times 0 -ModuleName 'Carbon'
+            Assert-MockCalled -CommandName 'Set-CAcl' -Times 0 -ModuleName 'Carbon.Security'
         }
 
         It 'updates existing permissions when forced' {
@@ -386,15 +386,15 @@ Describe 'Grant-CNtfsPermission' {
                                     -Path $script:containerPath `
                                     -ApplyTo FolderAndFiles
 
-            Mock -CommandName 'Set-Acl' -Verifiable -ModuleName 'Carbon.Security'
+            Mock -CommandName 'Set-CAcl' -ModuleName 'Carbon.Security'
 
             Grant-CNtfsPermission -Identity $script:user `
-                                -Permission FullControl `
-                                -Path $script:containerPath `
-                                -Apply FolderAndFiles `
-                                -Force
+                                  -Permission FullControl `
+                                  -Path $script:containerPath `
+                                  -Apply FolderAndFiles `
+                                  -Force
 
-            Should -Invoke 'Set-Acl' -Times 1 -Exactly -ModuleName 'Carbon.Security'
+            Should -Invoke 'Set-CAcl' -Times 1 -Exactly -ModuleName 'Carbon.Security'
         }
 
         It 'sets permissions on hidden items' {

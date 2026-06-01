@@ -2,6 +2,14 @@
 
 # Carbon.FileSystem Changelog
 
+## 1.2.1
+
+* Fixed: `Grant-CNtfsPermission` uses wrong identity name in information message when removing a permission.
+* Fixed: `Grant-CNtfsPermission` fails when replacing the current user's permissions on a file or directory and ACL
+  inheritance is disabled.
+* Fixed: `Revoke-CNtfsPermission` fails when removing the current user's permissions on a file or directory and ACL
+  inheritance is disabled.
+
 ## 1.2.0
 
 ### Upgrade Instructions
